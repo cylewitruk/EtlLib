@@ -21,7 +21,7 @@ namespace EtlLib.Nodes
             return this;
         }
 
-        public abstract Task Execute();
+        public abstract void Execute();
 
         public override string ToString()
         {

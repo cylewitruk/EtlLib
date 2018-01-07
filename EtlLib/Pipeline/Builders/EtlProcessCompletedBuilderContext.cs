@@ -40,7 +40,7 @@ namespace EtlLib.Pipeline.Builders
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine();
+            sb.AppendLine("\n");
             sb.AppendLine(new string('=', 80));
             sb.AppendLine($"ETL Process Builder Graph");
             sb.AppendLine($"* Id:   {_parentBuilder.Id}");

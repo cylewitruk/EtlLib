@@ -14,7 +14,7 @@ namespace EtlLib.Nodes
         INode SetId(Guid id);
         INode SetContext(EtlProcessContext context);
 
-        Task Execute();
+        void Execute();
     }
 
     public interface INodeWithInput : INode { }

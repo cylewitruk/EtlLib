@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using EtlLib.Data;
@@ -19,8 +21,10 @@ namespace EtlLib.Pipeline
         public INodeWithOutput RootNode { get; }
         public string Name { get; }
 
-        public EtlProcess(EtlProcessContext context, ILoggingAdapter loggingAdapter)
+        public EtlProcess(string name, EtlProcessContext context, ILoggingAdapter loggingAdapter)
         {
+            Name = name;
+
             _ioAdapters = new List<IInputOutputAdapter>();
             _attachmentDeduplicationList = new List<string>();
             _nodes = new List<INode>();
@@ -95,28 +99,37 @@ namespace EtlLib.Pipeline
             _attachmentDeduplicationList.Add($"{output.Id}:{input.Id}");
         }
 
-        public async Task Execute()
+        public void Execute()
         {
-            _log.Info($"=== Executing ETL Process '{Name}' ===");
+            _log.Info($"=== Executing ETL Process '{Name}' (Started {DateTime.Now}) ===");
             var tasks = new List<Task>();
+            var processStopwatch = Stopwatch.StartNew();
 
             foreach (var node in _nodes)
             {
-                _log.Info($"Beginning execute task for node {node}.");
-                var task = node.Execute()
-                    .ContinueWith(tsk => _log.Info($"Execute task for node {node} has completed."));
-                task.Start();
-
-                //var task = Task.Factory
-                //    .StartNew(() => _log.Info($"Beginning execute task for node {node}."))
-                //    .ContinueWith(tsk => node.Execute())
-                //    .ContinueWith(tsk => _log.Info($"Execute task for node {node} has completed."));
+                var task = Task.Run(() =>
+                    {
+                        _log.Info($"Beginning execute task for node {node}.");
+                        var sw = Stopwatch.StartNew();
+                        node.Execute();
+                        sw.Stop();
+                        _log.Info($"Execute task for node {node} has completed in {sw.Elapsed}.");
+                    });
 
                 tasks.Add(task);
             }
 
             Task.WaitAll(tasks.ToArray());
-            _log.Info($"=== ETL Process '{Name}' has completed ===");
+
+            processStopwatch.Stop();
+
+            _log.Info($"=== ETL Process '{Name}' has completed (Runtime {processStopwatch.Elapsed}) ===");
+
+            _log.Debug("Disposing of all input/output adapters.");
+            _ioAdapters.ForEach(x => x.Dispose());
+
+            _log.Debug("Performing garbage collection of all generations.");
+            GC.Collect();
         }
     }
 }

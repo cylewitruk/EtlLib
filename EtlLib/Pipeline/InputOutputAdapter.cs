@@ -7,7 +7,7 @@ using EtlLib.Nodes;
 
 namespace EtlLib.Pipeline
 {
-    public interface IInputOutputAdapter
+    public interface IInputOutputAdapter : IDisposable
     {
         INode OutputNode { get; }
 
@@ -101,6 +101,12 @@ namespace EtlLib.Pipeline
 
             foreach (var queue in _queueMap.Values)
                 queue.CompleteAdding();
+        }
+
+        public void Dispose()
+        {
+            foreach(var buffer in _queueMap)
+                buffer.Value.Dispose();
         }
     }
 }

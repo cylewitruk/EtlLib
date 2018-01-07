@@ -128,7 +128,7 @@ namespace EtlLib.Pipeline.Builders
 
         public EtlProcess Build()
         {
-            var process = new EtlProcess(ProcessContext, _loggingAdapter);
+            var process = new EtlProcess(Name, ProcessContext, _loggingAdapter);
 
             var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
 

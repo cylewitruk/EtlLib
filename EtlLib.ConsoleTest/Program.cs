@@ -65,6 +65,7 @@ namespace EtlLib.ConsoleTest
 
             process.Execute();
 
+            Console.WriteLine("\nPress enter to exit...\n");
             Console.ReadLine();
         }
     }

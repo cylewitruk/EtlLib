@@ -55,7 +55,7 @@ namespace EtlLib.Nodes.CsvFiles
             return this;
         }
 
-        public override async Task Execute()
+        public override void Execute()
         {
             var log = Context.LoggingAdapter.CreateLogger("EtlLib.Nodes.CsvWriterNode");
             var first = true;
@@ -87,7 +87,7 @@ namespace EtlLib.Nodes.CsvFiles
                     _writtenRowCount++;
                 }
 
-                await writer.FlushAsync();
+                writer.Flush();
             }
 
             if (_includeHeader)

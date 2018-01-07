@@ -1,8 +1,6 @@
 ﻿using System.IO;
-using System.Threading.Tasks;
 using CsvHelper;
 using EtlLib.Data;
-using EtlLib.Logging;
 
 namespace EtlLib.Nodes.CsvFiles
 {
@@ -10,7 +8,6 @@ namespace EtlLib.Nodes.CsvFiles
     {
         private readonly bool _hasHeader;
         private string _filePath;
-        private ILogger _log;
 
         public CsvReaderNode(bool hasHeader = true, string filePath = null, string stateKey = null)
         {
@@ -35,8 +32,6 @@ namespace EtlLib.Nodes.CsvFiles
 
         public override void Execute()
         {
-            _log = Context.LoggingAdapter.CreateLogger("EtlLib.Nodes.CsvReaderNode");
-
             using (var file = File.OpenText(_filePath))
             using (var reader = new CsvReader(file))
             {
