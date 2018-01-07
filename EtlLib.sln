@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib", "EtlLib\EtlLib.csproj", "{2850690C-13A9-442B-A71C-5F2273730D8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.ConsoleTest", "EtlLib.ConsoleTest\EtlLib.ConsoleTest.csproj", "{7AB6DFA9-49C7-4EE7-83E2-638CD0BDF623}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Logging.NLog", "EtlLib.Logging.NLog\EtlLib.Logging.NLog.csproj", "{8671742C-02CF-460C-9528-F26AEEF03223}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.CsvFiles", "EtlLib.Nodes.CsvFiles\EtlLib.Nodes.CsvFiles.csproj", "{3F674523-8B41-40E2-B5B7-F2F105F99F6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.SqlServer", "EtlLib.Nodes.SqlServer\EtlLib.Nodes.SqlServer.csproj", "{77C108E9-7AC5-43D8-A612-0208E09C1122}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.AmazonS3", "EtlLib.Nodes.AmazonS3\EtlLib.Nodes.AmazonS3.csproj", "{434F76E9-26E0-4998-AC3A-381F86A3A692}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2850690C-13A9-442B-A71C-5F2273730D8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2850690C-13A9-442B-A71C-5F2273730D8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2850690C-13A9-442B-A71C-5F2273730D8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2850690C-13A9-442B-A71C-5F2273730D8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7AB6DFA9-49C7-4EE7-83E2-638CD0BDF623}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7AB6DFA9-49C7-4EE7-83E2-638CD0BDF623}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7AB6DFA9-49C7-4EE7-83E2-638CD0BDF623}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7AB6DFA9-49C7-4EE7-83E2-638CD0BDF623}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8671742C-02CF-460C-9528-F26AEEF03223}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8671742C-02CF-460C-9528-F26AEEF03223}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8671742C-02CF-460C-9528-F26AEEF03223}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8671742C-02CF-460C-9528-F26AEEF03223}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F674523-8B41-40E2-B5B7-F2F105F99F6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F674523-8B41-40E2-B5B7-F2F105F99F6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F674523-8B41-40E2-B5B7-F2F105F99F6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F674523-8B41-40E2-B5B7-F2F105F99F6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77C108E9-7AC5-43D8-A612-0208E09C1122}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77C108E9-7AC5-43D8-A612-0208E09C1122}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77C108E9-7AC5-43D8-A612-0208E09C1122}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77C108E9-7AC5-43D8-A612-0208E09C1122}.Release|Any CPU.Build.0 = Release|Any CPU
+		{434F76E9-26E0-4998-AC3A-381F86A3A692}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{434F76E9-26E0-4998-AC3A-381F86A3A692}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{434F76E9-26E0-4998-AC3A-381F86A3A692}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{434F76E9-26E0-4998-AC3A-381F86A3A692}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {35A58916-7182-4058-B44F-F19927D47BA6}
+	EndGlobalSection
+EndGlobal
