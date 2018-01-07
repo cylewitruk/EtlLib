@@ -26,7 +26,7 @@ namespace EtlLib.Nodes.CsvFiles
 
         public CsvReaderNode WithFilePathFromStateKey(string key)
         {
-            _filePath = (string) Context.State[key];
+            _filePath = (string) Context.StateDict[key];
             return this;
         }
 

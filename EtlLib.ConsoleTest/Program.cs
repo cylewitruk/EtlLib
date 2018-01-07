@@ -11,13 +11,6 @@ namespace EtlLib.ConsoleTest
     {
         static void Main(string[] args)
         {
-
-            //EtlPipeline
-            //    .Builder
-            //        .Input(ctx => new CsvReaderNode())
-            //        .Transform(ctx => new Transformation1())
-            //        .LeftJoin(Etl.Input(ctx => new AdoNetReaderNode(input1ConnectionString)))
-
             var loggingAdapter = new NLogLoggingAdapter();
 
             var builder = EtlProcessBuilder
@@ -25,38 +18,20 @@ namespace EtlLib.ConsoleTest
                 {
                     cfg
                         .WithLoggingAdapter(loggingAdapter)
-                        .Named("Test Process");
+                        .Named("Test Process")
+                        .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!");
                 })
                 .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting.csv"))
+                .GenerateRowNumbers("_id")
                 .Filter(row => !string.IsNullOrWhiteSpace((string)row["RBI"]))
                 .Continue(ctx => new GenericFilterNode<Row>(row => row.GetAs<int>("RBI") > 10))
                 .Filter(row => row.GetAs<int>("HR") > 1)
-                //.Map(row => new MapTest { Id = (long)row["id"] })
-                .Continue(ctx => new GenericTransformationNode<Row>((state, row) =>
-                {
-                    if (!state.ContainsKey("_id"))
-                        state["_id"] = 0;
-                    else
-                        state["_id"] = (int)state["_id"] + 1;
-
-                    var newRow = row.Copy();
-                    newRow["_id"] = state["_id"];
-                    return newRow;
-                }))
                 .Transform(row =>
                 {
                     var newRow = row.Copy();
                     newRow["is_transformed"] = true;
                     return newRow;
                 })
-                //.Branch(
-                //    (ctx, b1) => b1
-                //        .Filter(row => row.GetAs<bool>("is_branch1"))
-                //        .Filter(row => row.GetAs<int>("id") % 2 == 0),
-                //    (ctx, b2) => b2
-                //        .Filter(row => row.GetAs<bool>("is_branch2"))
-                //)
-                //.MergeResults()
                 .Complete(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting_TRANSFORMED.csv"));
 
             builder.PrintGraph();
@@ -79,4 +54,21 @@ namespace EtlLib.ConsoleTest
             throw new System.NotImplementedException();
         }
     }
+
+    //EtlPipeline
+    //    .Builder
+    //        .Input(ctx => new CsvReaderNode())
+    //        .Transform(ctx => new Transformation1())
+    //        .LeftJoin(Etl.Input(ctx => new AdoNetReaderNode(input1ConnectionString)))
+
+    //.Map(row => new MapTest { Id = (long)row["id"] })
+
+    //.Branch(
+    //    (ctx, b1) => b1
+    //        .Filter(row => row.GetAs<bool>("is_branch1"))
+    //        .Filter(row => row.GetAs<int>("id") % 2 == 0),
+    //    (ctx, b2) => b2
+    //        .Filter(row => row.GetAs<bool>("is_branch2"))
+    //)
+    //.MergeResults()
 }

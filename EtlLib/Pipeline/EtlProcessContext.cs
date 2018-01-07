@@ -6,18 +6,29 @@ using EtlLib.Nodes;
 
 namespace EtlLib.Pipeline
 {
-    public class EtlProcessContext
+    public class EtlProcessContext<T>
+        where T : new()
     {
-        public IDictionary<string, object> State { get; }
+        public T State { get; }
+        public IDictionary<string, object> StateDict { get; }
         public ILoggingAdapter LoggingAdapter { get; }
 
         internal IDictionary<INode, Exception> Errors { get; }
 
         public EtlProcessContext(ILoggingAdapter loggingAdapter)
         {
-            State = new ConcurrentDictionary<string, object>();
+            StateDict = new ConcurrentDictionary<string, object>();
             Errors = new ConcurrentDictionary<INode, Exception>();
             LoggingAdapter = loggingAdapter;
+            State = new T();
+        }
+    }
+
+    public class EtlProcessContext : EtlProcessContext<object>
+    {
+        public EtlProcessContext(ILoggingAdapter loggingAdapter)
+            : base(loggingAdapter)
+        {
         }
     }
 }

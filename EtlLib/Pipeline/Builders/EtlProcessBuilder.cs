@@ -22,25 +22,25 @@ namespace EtlLib.Pipeline.Builders
     /// </summary>
     public class EtlProcessBuilder : IEtlProcessBuilder
     {
-        private readonly EtlPipelineContext _pipelineContext;
-        private EtlProcessBuilderSettings _settings;
-        private string _name;
+        //private readonly EtlPipelineContext _pipelineContext;
+        private readonly EtlProcessSettings _settings;
 
         public Guid Id { get; }
         private readonly ILoggingAdapter _loggingAdapter;
         internal ILogger Log { get; }
         internal EtlProcessContext ProcessContext { get; }
-        public string Name => _name;
+        public string Name { get; private set; }
+
         internal Dictionary<Guid, InputOutputMap> NodeGraph { get; }
         internal Dictionary<Guid, EtlProcessBuilder> SubProcesses { get; }
         internal INode FirstNode { get; private set; }
         internal INode LastNode { get; private set; }
 
-        private EtlProcessBuilder(EtlProcessBuilderSettings config)
+        private EtlProcessBuilder(EtlProcessSettings config)
         {
             _settings = config;
             Id = Guid.NewGuid();
-            _name = config.Name ?? Id.ToString();
+            Name = config.Name ?? Id.ToString();
             ProcessContext = new EtlProcessContext(config.LoggingAdapter);
             NodeGraph = new Dictionary<Guid, InputOutputMap>();
             SubProcesses = new Dictionary<Guid, EtlProcessBuilder>();
@@ -48,9 +48,9 @@ namespace EtlLib.Pipeline.Builders
             _loggingAdapter = config.LoggingAdapter;
         }
 
-        public static IEtlProcessBuilder Create(Action<EtlProcessBuilderSettings> cfg)
+        public static IEtlProcessBuilder Create(Action<EtlProcessSettings> cfg)
         {
-            var config = new EtlProcessBuilderSettings
+            var config = new EtlProcessSettings
             {
                 LoggingAdapter = new NullLoggerAdapter()
             };
@@ -109,7 +109,7 @@ namespace EtlLib.Pipeline.Builders
             {
                 FirstNode = attachTo,
                 LastNode = attachTo,
-                _name = name ?? $"{_name} (subprocess {SubProcesses.Count + 1})"
+                Name = name ?? $"{Name} (subprocess {SubProcesses.Count + 1})"
             };
             builder.NodeGraph[attachTo.Id] = NodeGraph[attachTo.Id];
 
@@ -128,7 +128,7 @@ namespace EtlLib.Pipeline.Builders
 
         public EtlProcess Build()
         {
-            var process = new EtlProcess(Name, ProcessContext, _loggingAdapter);
+            var process = new EtlProcess(_settings, ProcessContext);
 
             var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
 

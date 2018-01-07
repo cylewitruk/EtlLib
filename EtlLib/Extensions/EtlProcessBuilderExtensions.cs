@@ -25,5 +25,21 @@ namespace EtlLib
         {
             return builder.Continue(ctx => new GenericMappingNode<TIn, TOut>(map));
         }
+
+        public static IOutputNodeBuilderContext<Row> GenerateRowNumbers(this IOutputNodeBuilderContext<Row> builder,
+            string idColumnName)
+        {
+            return builder.Continue(ctx => new GenericTransformationNode<Row>((state, row) =>
+            {
+                if (!state.ContainsKey(idColumnName))
+                    state[idColumnName] = 0;
+                else
+                    state[idColumnName] = (int) state[idColumnName] + 1;
+
+                var newRow = row.Copy();
+                newRow[idColumnName] = state[idColumnName];
+                return newRow;
+            }));
+        }
     }
 }

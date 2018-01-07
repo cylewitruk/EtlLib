@@ -5,7 +5,7 @@ using EtlLib.Data;
 
 namespace EtlLib.Nodes.SqlServer
 {
-    public class SqlServerReader : AbstractOutputNode<Row>
+    public class SqlServerReaderNode : AbstractOutputNode<Row>
     {
         private readonly string _connectionString;
         private readonly string _commandText;
@@ -13,7 +13,7 @@ namespace EtlLib.Nodes.SqlServer
 
         private IsolationLevel _isolationLevel;
 
-        public SqlServerReader(string connectionString, string commandText)
+        public SqlServerReaderNode(string connectionString, string commandText)
         {
             _connectionString = connectionString;
             _commandText = commandText;
@@ -21,13 +21,13 @@ namespace EtlLib.Nodes.SqlServer
             _isolationLevel = IsolationLevel.ReadCommitted;
         }
 
-        public SqlServerReader WithParameter(string name, object value)
+        public SqlServerReaderNode WithParameter(string name, object value)
         {
             _parameters[name] = value;
             return this;
         }
 
-        public SqlServerReader WithIsolationLevel(IsolationLevel isolationLevel)
+        public SqlServerReaderNode WithIsolationLevel(IsolationLevel isolationLevel)
         {
             _isolationLevel = isolationLevel;
             return this;

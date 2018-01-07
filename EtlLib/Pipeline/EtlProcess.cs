@@ -6,33 +6,35 @@ using System.Threading.Tasks;
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
+using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.Pipeline
 {
     public class EtlProcess
     {
         private readonly EtlProcessContext _processContext;
-        private readonly ILoggingAdapter _loggingAdapter;
         private readonly ILogger _log;
         private readonly List<IInputOutputAdapter> _ioAdapters;
         private readonly List<string> _attachmentDeduplicationList;
         private readonly List<INode> _nodes;
+        private readonly EtlProcessSettings _settings;
 
         public INodeWithOutput RootNode { get; }
         public string Name { get; }
 
-        public EtlProcess(string name, EtlProcessContext context, ILoggingAdapter loggingAdapter)
+        public EtlProcess(EtlProcessSettings settings, EtlProcessContext context)
         {
-            Name = name;
+            _settings = settings;
+
+            Name = settings.Name;
 
             _ioAdapters = new List<IInputOutputAdapter>();
             _attachmentDeduplicationList = new List<string>();
             _nodes = new List<INode>();
-
-            _loggingAdapter = loggingAdapter;
+            
             _processContext = context;
 
-            _log = loggingAdapter.CreateLogger("EtlLib.EtlProcess");
+            _log = settings.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
         }
 
         private void RegisterNode(INode node)
@@ -66,7 +68,7 @@ namespace EtlLib.Pipeline
             if (ioAdapter == null)
             {
                 ioAdapter = new InputOutputAdapter<T>(output)
-                    .WithLogger(_loggingAdapter.CreateLogger("EtlLib.IOAdapter"));
+                    .WithLogger(_settings.LoggingAdapter.CreateLogger("EtlLib.IOAdapter"));
 
                 output.SetEmitter(ioAdapter);
 
@@ -102,6 +104,13 @@ namespace EtlLib.Pipeline
         public void Execute()
         {
             _log.Info($"=== Executing ETL Process '{Name}' (Started {DateTime.Now}) ===");
+
+            if (_settings.ContextInitializer != null)
+            {
+                _log.Info("Running context initializer.");
+                _settings.ContextInitializer(_processContext);
+            }
+
             var tasks = new List<Task>();
             var processStopwatch = Stopwatch.StartNew();
 
