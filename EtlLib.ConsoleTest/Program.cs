@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices.ComTypes;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
 using EtlLib.Nodes.CsvFiles;
@@ -7,9 +8,9 @@ using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.ConsoleTest
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var loggingAdapter = new NLogLoggingAdapter();
 
@@ -19,17 +20,22 @@ namespace EtlLib.ConsoleTest
                     cfg
                         .WithLoggingAdapter(loggingAdapter)
                         .Named("Test Process")
-                        .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!");
+                        .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!")
+                        .RegisterObjectPool<Row>(100000);
                 })
                 .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting.csv"))
                 .GenerateRowNumbers("_id")
                 .Filter(row => !string.IsNullOrWhiteSpace((string)row["RBI"]))
                 .Continue(ctx => new GenericFilterNode<Row>(row => row.GetAs<int>("RBI") > 10))
                 .Filter(row => row.GetAs<int>("HR") > 1)
-                .Transform(row =>
+                //.BlockingExecute((ctx, builder) => builder.)
+                .Transform((ctx, row) =>
                 {
-                    var newRow = row.Copy();
+                    var newRow = ctx.ObjectPool.Borrow<Row>();
+                    //var newRow = row.Copy();
+                    row.CopyTo(newRow);
                     newRow["is_transformed"] = true;
+                    ctx.ObjectPool.Return(row);
                     return newRow;
                 })
                 .Complete(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting_TRANSFORMED.csv"));
@@ -45,13 +51,24 @@ namespace EtlLib.ConsoleTest
         }
     }
 
-    public class MapTest : IFreezable
+    public class MapTest : INodeOutput<MapTest>
     {
-        public long Id { get; set; }
-        public bool IsFrozen { get; }
+        public long Id { get; private set; }
+        public bool IsFrozen { get; private set; }
         public void Freeze()
         {
-            throw new System.NotImplementedException();
+            IsFrozen = true;
+        }
+
+        public void CopyTo(MapTest obj)
+        {
+            obj.Id = Id;
+        }
+
+        public void Reset()
+        {
+            Id = 0;
+            IsFrozen = false;
         }
     }
 

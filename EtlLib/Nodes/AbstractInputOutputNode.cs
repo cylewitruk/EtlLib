@@ -4,8 +4,8 @@ using EtlLib.Data;
 namespace EtlLib.Nodes
 {
     public abstract class AbstractInputOutputNode<TIn, TOut> : AbstractOutputNode<TOut>, INodeWithInputOutput<TIn, TOut>
-        where TIn : class, IFreezable
-        where TOut : class, IFreezable
+        where TIn : class, INodeOutput<TIn>, new()
+        where TOut : class, INodeOutput<TOut>, new()
     {
         public IEnumerable<TIn> Input { get; private set; }
 

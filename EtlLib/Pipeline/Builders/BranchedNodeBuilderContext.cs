@@ -7,13 +7,13 @@ using EtlLib.Nodes.Impl;
 namespace EtlLib.Pipeline.Builders
 {
     public interface IBranchedNodeBuilderContext<TOut>
-        where TOut : class, IFreezable
+        where TOut : class, INodeOutput<TOut>, new()
     {
         IOutputNodeBuilderContext<TOut> MergeResults();
     }
 
     public class BranchedNodeBuilderContext<TOut> : IBranchedNodeBuilderContext<TOut> 
-        where TOut : class, IFreezable
+        where TOut : class, INodeOutput<TOut>, new()
     {
         private readonly EtlProcessBuilder _parentBuilder, _branch1Builder, _branch2Builder;
         

@@ -20,7 +20,7 @@ namespace EtlLib.Nodes
     public interface INodeWithInput : INode { }
 
     public interface INodeWithInput<TIn> : INodeWithInput
-        where TIn : class, IFreezable
+        where TIn : class, INodeOutput<TIn>, new()
     {
         IEnumerable<TIn> Input { get; }
 
@@ -28,7 +28,7 @@ namespace EtlLib.Nodes
     }
 
     public interface INodeWithInput2<TIn> : INodeWithInput<TIn>
-        where TIn : class, IFreezable
+        where TIn : class, INodeOutput<TIn>, new()
     {
         IEnumerable<TIn> Input2 { get; }
 
@@ -38,7 +38,7 @@ namespace EtlLib.Nodes
     public interface INodeWithOutput : INode { }
 
     public interface INodeWithOutput<TOut> : INodeWithOutput
-        where TOut : class, IFreezable
+        where TOut : class, INodeOutput<TOut>, new()
     {
         IEmitter<TOut> Emitter { get; }
 
@@ -46,8 +46,8 @@ namespace EtlLib.Nodes
     }
 
     public interface INodeWithInputOutput<TIn, TOut> : INodeWithInput<TIn>, INodeWithOutput<TOut>
-        where TIn : class, IFreezable
-        where TOut : class, IFreezable
+        where TIn : class, INodeOutput<TIn>, new()
+        where TOut : class, INodeOutput<TOut>, new()
     {
     }
 }

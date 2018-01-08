@@ -3,10 +3,22 @@ using System.Collections.Generic;
 
 namespace EtlLib.Data
 {
-    public class ObjectPool<T>
+    public interface IObjectPool
+    {
+        bool IsInitialized { get; }
+        int Size { get; }
+        int Referenced { get; }
+        int Free { get; }
+        void Initialize();
+        object BorrowObject();
+        void ReturnObject(object o);
+        void DeAllocate();
+    }
+
+    public class ObjectPool<T>  : IObjectPool
+        where T : IResettable, new()
     {
         private readonly bool _autoGrow;
-        private bool _matchNonPublicConstructor;
         private volatile int _referenced;
         private readonly Stack<T> _stack;
 
@@ -52,27 +64,26 @@ namespace EtlLib.Data
         /// <summary>
         /// Initializes the object pool to the size specified in the constructor.
         /// </summary>
-        public void Initialize(bool matchNonPublicConstructor = false)
+        public void Initialize()
         {
             if (IsInitialized)
                 throw new InvalidOperationException("Object pool is already initialized.");
-
-            _matchNonPublicConstructor = matchNonPublicConstructor;
 
             lock (_stack)
             {
                 for (var i = 0; i < Size; i++)
                 {
-                    T obj;
-                    if (CustomCreateInstance != null)
-                        obj = CustomCreateInstance(i);
-                    else
-                        obj = (T)Activator.CreateInstance(typeof(T), _matchNonPublicConstructor);
+                    var obj = CustomCreateInstance != null ? CustomCreateInstance(i) : new T();
                     _stack.Push(obj);
                 }
 
                 IsInitialized = true;
             }
+        }
+
+        public object BorrowObject()
+        {
+            return Borrow();
         }
 
         /// <summary>
@@ -93,7 +104,7 @@ namespace EtlLib.Data
                         obj = CustomCreateInstance(++_referenced);
                     else
                     {
-                        obj = (T)Activator.CreateInstance(typeof(T), _matchNonPublicConstructor);
+                        obj = new T();
                         _referenced++;
                     }
                 }
@@ -107,6 +118,11 @@ namespace EtlLib.Data
             }
         }
 
+        public void ReturnObject(object o)
+        {
+            Return((T)o);
+        }
+
         /// <summary>
         /// Returns an object to the pool.
         /// </summary>
@@ -114,6 +130,8 @@ namespace EtlLib.Data
         {
             if (!IsInitialized)
                 throw new InvalidOperationException("Object pool has not been initialized or has been deallocated.  Call the Initialize() method before trying to use the pool.");
+
+            obj.Reset();
 
             lock (_stack)
             {

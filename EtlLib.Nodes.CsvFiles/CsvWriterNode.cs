@@ -1,27 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using CsvHelper;
 using EtlLib.Data;
 
 namespace EtlLib.Nodes.CsvFiles
 {
-    public class CsvWriterNodeResult : Frozen, IHasFilePath
-    {
-        public string FilePath { get; }
-        public int RowCount { get; }
-        public string[] Columns { get; }
-        public bool HasHeaderRow { get; }
-
-        public CsvWriterNodeResult(string filePath, int rowCount, string[] columns, bool hasHeaderRow)
-        {
-            FilePath = filePath;
-            RowCount = rowCount;
-            Columns = columns;
-            HasHeaderRow = hasHeaderRow;
-        }
-    }
-
     public class CsvWriterNode : AbstractInputOutputNode<Row, CsvWriterNodeResult>
     {
         private string _filePath;
@@ -84,6 +67,7 @@ namespace EtlLib.Nodes.CsvFiles
                     }
                     writer.NextRecord();
 
+                    Context.ObjectPool.Return(row);
                     _writtenRowCount++;
                 }
 

@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 namespace EtlLib.Nodes
 {
     public abstract class AbstractOutputNode<TOut> : Node, INodeWithOutput<TOut>
-        where TOut : class, IFreezable
+        where TOut : class, INodeOutput<TOut>, new()
     {
         public IEmitter<TOut> Emitter { get; private set; }
 
