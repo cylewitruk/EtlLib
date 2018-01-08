@@ -30,7 +30,7 @@ namespace EtlLib.Nodes.CsvFiles
             return this;
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             using (var file = File.OpenText(_filePath))
             using (var reader = new CsvReader(file))

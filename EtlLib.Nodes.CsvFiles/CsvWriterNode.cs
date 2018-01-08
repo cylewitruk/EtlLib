@@ -38,7 +38,7 @@ namespace EtlLib.Nodes.CsvFiles
             return this;
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             var log = Context.LoggingAdapter.CreateLogger("EtlLib.Nodes.CsvWriterNode");
             var first = true;

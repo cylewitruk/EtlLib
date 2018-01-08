@@ -14,7 +14,7 @@ namespace EtlLib.Nodes.Impl
             _mapFn = mapFn;
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             foreach (var item in Input)
             {

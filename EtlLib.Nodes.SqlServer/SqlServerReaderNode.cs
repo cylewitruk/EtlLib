@@ -33,7 +33,7 @@ namespace EtlLib.Nodes.SqlServer
             return this;
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             using (var con = new SqlConnection(_connectionString))
             {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using EtlLib.Data;
 using EtlLib.Pipeline;
 
@@ -10,9 +9,11 @@ namespace EtlLib.Nodes
     {
         Guid Id { get; }
         EtlProcessContext Context { get; }
+        INodeWaiter Waiter { get; }
 
         INode SetId(Guid id);
         INode SetContext(EtlProcessContext context);
+        INode SetWaiter(INodeWaiter waiter);
 
         void Execute();
     }

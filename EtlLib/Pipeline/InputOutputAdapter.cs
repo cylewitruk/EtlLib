@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
@@ -29,6 +30,8 @@ namespace EtlLib.Pipeline
         private long _emittedItems;
 
         public INode OutputNode => _output;
+        public INodeWaitSignaller WaitSignaller { get; }
+        public INodeWaiter Waiter { get; }
 
         public InputOutputAdapter(EtlProcessContext context, INodeWithOutput<T> output)
         {
@@ -37,6 +40,18 @@ namespace EtlLib.Pipeline
             _output = output;
             _log = new NullLogger();
             _context = context;
+
+            if (output is IBlockingNode)
+            {
+                var signaller = new BlockingWaitSignaller();
+                ((IBlockingNode)output).SetWaitSignaller(WaitSignaller);
+                Waiter = signaller;
+                WaitSignaller = signaller;
+            }
+            else
+            {
+                Waiter = new NoWaitNodeWaiter();
+            }
         }
 
         public InputOutputAdapter<T> WithLogger(ILogger log)
@@ -90,7 +105,7 @@ namespace EtlLib.Pipeline
             item.Freeze();
             _emittedItems++;
 
-            bool firstTarget = true;
+            var firstTarget = true;
             foreach (var queue in _queueMap.Values)
             {
                 if (firstTarget)
@@ -122,6 +137,45 @@ namespace EtlLib.Pipeline
         {
             foreach(var buffer in _queueMap)
                 buffer.Value.Dispose();
+        }
+    }
+
+    public class BlockingWaitSignaller : INodeWaitSignaller, INodeWaiter
+    {
+        private readonly ManualResetEventSlim _resetEvent;
+
+        public BlockingWaitSignaller()
+        {
+            _resetEvent = new ManualResetEventSlim();
+        }
+
+        public void SignalWaitEnd()
+        {
+            _resetEvent.Set();
+        }
+
+        public void Wait()
+        {
+            _resetEvent.Wait();
+        }
+
+        public void Dispose()
+        {
+            _resetEvent?.Dispose();
+        }
+    }
+
+    public class NoWaitNodeWaiter : INodeWaiter
+    {
+        public static NoWaitNodeWaiter Instance;
+
+        static NoWaitNodeWaiter()
+        {
+            Instance = new NoWaitNodeWaiter();
+        }
+
+        public void Wait()
+        {
         }
     }
 }

@@ -68,7 +68,7 @@ namespace EtlLib.Nodes.AmazonS3
             return this;
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             using (var client = new AmazonS3Client(_awsCredentials, _awsRegionEndpoint))
             {

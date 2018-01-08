@@ -30,7 +30,7 @@ namespace EtlLib.Nodes.MongoDb
             return this;
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             var client = MongoStatic.GetClient(_connectionString);
             var database = client.GetDatabase(_databaseName);

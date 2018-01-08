@@ -97,6 +97,8 @@ namespace EtlLib.Pipeline
                 _log.Info($"Attaching {input} input port #1 to output port of {output}.");
                 input.SetInput(ioAdapter.GetConsumingEnumerable(input));
             }
+
+            input.SetWaiter(ioAdapter.Waiter);
             
             _attachmentDeduplicationList.Add($"{output.Id}:{input.Id}");
         }

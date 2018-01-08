@@ -17,7 +17,7 @@ namespace EtlLib.Nodes.Impl
             _stateDictionary = new ConcurrentDictionary<string, object>();
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             foreach (var item in Input)
             {
@@ -41,7 +41,7 @@ namespace EtlLib.Nodes.Impl
             _state = new TState();
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             foreach (var item in Input)
             {

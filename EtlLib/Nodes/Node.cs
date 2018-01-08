@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Threading.Tasks;
 using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes
 {
     public abstract class Node : INode
     {
-        public Guid Id { private set; get; }
-        public EtlProcessContext Context { private set; get; }
+        public Guid Id { get; private set; }
+        public EtlProcessContext Context { get; private set; }
+        public INodeWaiter Waiter { get; private set; }
 
         public INode SetId(Guid id)
         {
@@ -21,7 +21,20 @@ namespace EtlLib.Nodes
             return this;
         }
 
-        public abstract void Execute();
+        public INode SetWaiter(INodeWaiter waiter)
+        {
+            Waiter = waiter;
+            return this;
+        }
+
+        public void Execute()
+        {
+            Waiter?.Wait();
+
+            OnExecute();
+        }
+
+        public abstract void OnExecute();
 
         public override string ToString()
         {
@@ -41,6 +54,16 @@ namespace EtlLib.Nodes
         public override int GetHashCode()
         {
             return Id.GetHashCode();
+        }
+    }
+
+    public abstract class BlockingNode : Node, IBlockingNode
+    {
+        public INodeWaitSignaller WaitSignaller { get; private set; }
+        public INode SetWaitSignaller(INodeWaitSignaller signaller)
+        {
+            WaitSignaller = signaller;
+            return this;
         }
     }
 }

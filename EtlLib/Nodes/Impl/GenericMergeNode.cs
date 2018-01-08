@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using EtlLib.Data;
 
 namespace EtlLib.Nodes.Impl
@@ -22,7 +21,7 @@ namespace EtlLib.Nodes.Impl
             return this;
         }
 
-        public override void Execute()
+        public override void OnExecute()
         {
             using (var input1Enumerator = Input.GetEnumerator())
             using (var input2Enumerator = Input2.GetEnumerator())
