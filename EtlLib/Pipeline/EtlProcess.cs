@@ -65,8 +65,7 @@ namespace EtlLib.Pipeline
 
             RegisterNodes(input, output);
 
-            var ioAdapter = _ioAdapters.SingleOrDefault(x => x.OutputNode.Equals(output)) as InputOutputAdapter<T>;
-            if (ioAdapter == null)
+            if (!(_ioAdapters.SingleOrDefault(x => x.OutputNode.Equals(output)) is InputOutputAdapter<T> ioAdapter))
             {
                 ioAdapter = new InputOutputAdapter<T>(_processContext, output)
                     .WithLogger(_settings.LoggingAdapter.CreateLogger("EtlLib.IOAdapter"));

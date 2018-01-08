@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices.ComTypes;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
 using EtlLib.Nodes.CsvFiles;
@@ -20,13 +21,14 @@ namespace EtlLib.ConsoleTest
                         .WithLoggingAdapter(loggingAdapter)
                         .Named("Test Process")
                         .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!")
-                        .RegisterObjectPool<Row>(150000);
+                        .RegisterObjectPool<Row>(100000);
                 })
                 .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting.csv"))
                 .GenerateRowNumbers("_id")
                 .Filter(row => !string.IsNullOrWhiteSpace((string)row["RBI"]))
                 .Continue(ctx => new GenericFilterNode<Row>(row => row.GetAs<int>("RBI") > 10))
                 .Filter(row => row.GetAs<int>("HR") > 1)
+                //.BlockingExecute((ctx, builder) => builder.)
                 .Transform((ctx, row) =>
                 {
                     var newRow = ctx.ObjectPool.Borrow<Row>();
