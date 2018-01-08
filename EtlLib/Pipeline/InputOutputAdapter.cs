@@ -12,29 +12,31 @@ namespace EtlLib.Pipeline
         INode OutputNode { get; }
 
         bool AttachConsumer<T>(INodeWithInput<T> input) 
-            where T : class, IFreezable;
+            where T : class, INodeOutput<T>, new();
 
         bool AttachConsumer<T>(INodeWithInput2<T> input)
-            where T : class, IFreezable;
+            where T : class, INodeOutput<T>, new();
     }
 
     public class InputOutputAdapter<T> : IInputOutputAdapter, IEmitter<T>
-        where T : class, IFreezable
+        where T : class, INodeOutput<T>, new()
     {
         private readonly ConcurrentDictionary<Guid, BlockingCollection<T>> _queueMap;
         private readonly ConcurrentBag<INodeWithInput<T>> _inputs;
         private readonly INodeWithOutput<T> _output;
+        private readonly EtlProcessContext _context;
         private ILogger _log;
         private long _emittedItems;
 
         public INode OutputNode => _output;
 
-        public InputOutputAdapter(INodeWithOutput<T> output)
+        public InputOutputAdapter(EtlProcessContext context, INodeWithOutput<T> output)
         {
             _queueMap = new ConcurrentDictionary<Guid, BlockingCollection<T>>();
             _inputs = new ConcurrentBag<INodeWithInput<T>>();
             _output = output;
             _log = new NullLogger();
+            _context = context;
         }
 
         public InputOutputAdapter<T> WithLogger(ILogger log)
@@ -54,7 +56,7 @@ namespace EtlLib.Pipeline
         }
 
         public bool AttachConsumer<TIn>(INodeWithInput<TIn> input)
-            where TIn : class, IFreezable
+            where TIn : class, INodeOutput<TIn>, new()
         {
             if (input.Input != null)
                 throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) already has an input assigned.");
@@ -68,7 +70,7 @@ namespace EtlLib.Pipeline
         }
 
         public bool AttachConsumer<TIn>(INodeWithInput2<TIn> input)
-            where TIn : class, IFreezable
+            where TIn : class, INodeOutput<TIn>, new()
         {
             if (input.Input != null && input.Input2 != null)
                 throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) has two input slots of which both are already assigned.");
@@ -88,8 +90,21 @@ namespace EtlLib.Pipeline
             item.Freeze();
             _emittedItems++;
 
+            bool firstTarget = true;
             foreach (var queue in _queueMap.Values)
-                queue.Add(item);
+            {
+                if (firstTarget)
+                {
+                    queue.Add(item);
+                    firstTarget = false;
+                }
+                else
+                {
+                    var duplicatedItem = _context.ObjectPool.Borrow<T>();
+                    item.CopyTo(duplicatedItem);
+                    queue.Add(duplicatedItem);
+                }
+            }
 
             if (_emittedItems % 5000 == 0)
                 _log.Debug($"Node {_output} has emitted {_emittedItems} items.");

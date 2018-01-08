@@ -5,7 +5,7 @@ using EtlLib.Data;
 namespace EtlLib.Nodes.Impl
 {
     public class GenericMergeNode<T> : AbstractOutputNode<T>, INodeWithInput2<T>
-        where T : class, IFreezable
+        where T : class, INodeOutput<T>, new()
     {
         public IEnumerable<T> Input { get; private set; }
         public IEnumerable<T> Input2 { get; private set; }

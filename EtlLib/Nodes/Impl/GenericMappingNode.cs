@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Threading.Tasks;
 using EtlLib.Data;
 
 namespace EtlLib.Nodes.Impl
 {
     public class GenericMappingNode<TIn, TOut> : AbstractInputOutputNode<TIn, TOut>
-        where TIn : class, IFreezable
-        where TOut : class, IFreezable
+        where TIn : class, INodeOutput<TIn>, new()
+        where TOut : class, INodeOutput<TOut>, new()
     {
-        private readonly Func<TIn, TOut> _mapFn;
+        private readonly Func<TIn, TOut, TOut> _mapFn;
 
-        public GenericMappingNode(Func<TIn, TOut> mapFn)
+        public GenericMappingNode(Func<TIn, TOut, TOut> mapFn)
         {
             _mapFn = mapFn;
         }
@@ -18,7 +17,11 @@ namespace EtlLib.Nodes.Impl
         public override void Execute()
         {
             foreach (var item in Input)
-                Emit(_mapFn(item));
+            {
+                var newItem = Context.ObjectPool.Borrow<TOut>();
+                Emit(_mapFn(item, newItem));
+                Context.ObjectPool.Return(item);
+            }
 
             Emitter.SignalEnd();
         }

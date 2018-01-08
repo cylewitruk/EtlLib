@@ -6,23 +6,23 @@ using EtlLib.Nodes;
 namespace EtlLib.Pipeline.Builders
 {
     public interface IOutputNodeBuilderContext<TIn> 
-        where TIn : class, IFreezable
+        where TIn : class, INodeOutput<TIn>, new()
     {
         IOutputNodeBuilderContext<TOut> Continue<TOut>(Func<EtlProcessContext, INodeWithInputOutput<TIn, TOut>> ctx)
-            where TOut : class, IFreezable;
+            where TOut : class, INodeOutput<TOut>, new();
 
         IBranchedNodeBuilderContext<TOut> Branch<TOut>(Func<EtlProcessContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch1,
             Func<EtlProcessContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch2)
-            where TOut : class, IFreezable;
+            where TOut : class, INodeOutput<TOut>, new();
 
         IEtlProcessCompletedBuilderContext Complete(Func<EtlProcessContext, INodeWithInput<TIn>> ctx);
 
         IEtlProcessCompletedWithResultBuilderContext<TOut> CompleteWithResult<TOut>(Func<EtlProcessContext, INodeWithInputOutput<TIn, TOut>> ctx)
-            where TOut : class, IFreezable;
+            where TOut : class, INodeOutput<TOut>, new();
     }
 
     public class OutputNodeBuilderContext<TIn> : IOutputNodeBuilderContext<TIn>
-        where TIn : class, IFreezable
+        where TIn : class, INodeOutput<TIn>, new()
     {
         private readonly EtlProcessBuilder _parentBuilder;
         private readonly ILogger _log;
@@ -37,7 +37,7 @@ namespace EtlLib.Pipeline.Builders
         }
 
         public IOutputNodeBuilderContext<TOut> Continue<TOut>(Func<EtlProcessContext, INodeWithInputOutput<TIn, TOut>> ctx)
-            where TOut : class, IFreezable
+            where TOut : class, INodeOutput<TOut>, new()
         {
             var node = ctx(_parentBuilder.ProcessContext);
 
@@ -57,7 +57,7 @@ namespace EtlLib.Pipeline.Builders
         public IBranchedNodeBuilderContext<TOut> Branch<TOut>(
             Func<EtlProcessContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch1, 
             Func<EtlProcessContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch2) 
-            where TOut : class, IFreezable
+            where TOut : class, INodeOutput<TOut>, new()
         {
             var subProcess1 = _parentBuilder.RegisterSubProcess(CreatingNode);
             var subProcess2 = _parentBuilder.RegisterSubProcess(CreatingNode);
@@ -86,7 +86,7 @@ namespace EtlLib.Pipeline.Builders
         }
 
         public IEtlProcessCompletedWithResultBuilderContext<TOut> CompleteWithResult<TOut>(Func<EtlProcessContext, INodeWithInputOutput<TIn, TOut>> ctx)
-            where TOut : class, IFreezable
+            where TOut : class, INodeOutput<TOut>, new()
         {
             var node = ctx(_parentBuilder.ProcessContext);
 

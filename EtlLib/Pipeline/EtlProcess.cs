@@ -52,7 +52,8 @@ namespace EtlLib.Pipeline
                 RegisterNode(node);
         }
 
-        public void AttachInputToOutput<T>(INodeWithOutput<T> output, INodeWithInput<T> input) where T : class, IFreezable
+        public void AttachInputToOutput<T>(INodeWithOutput<T> output, INodeWithInput<T> input) 
+            where T : class, INodeOutput<T>, new()
         {
             var dedupHash = $"{output.Id}:{input.Id}";
 
@@ -67,7 +68,7 @@ namespace EtlLib.Pipeline
             var ioAdapter = _ioAdapters.SingleOrDefault(x => x.OutputNode.Equals(output)) as InputOutputAdapter<T>;
             if (ioAdapter == null)
             {
-                ioAdapter = new InputOutputAdapter<T>(output)
+                ioAdapter = new InputOutputAdapter<T>(_processContext, output)
                     .WithLogger(_settings.LoggingAdapter.CreateLogger("EtlLib.IOAdapter"));
 
                 output.SetEmitter(ioAdapter);
@@ -111,6 +112,16 @@ namespace EtlLib.Pipeline
                 _settings.ContextInitializer(_processContext);
             }
 
+            if (_settings.ObjectPoolRegistrations.Count > 0)
+            {
+                _log.Info("Initializing object pools...");
+                foreach (var pool in _settings.ObjectPoolRegistrations)
+                {
+                    _log.Info($" - ObjectPool<{pool.Type.Name}> (InitialSize={pool.InitialSize}, AutoGrow={pool.AutoGrow})");
+                    _processContext.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
+                }
+            }
+
             var tasks = new List<Task>();
             var processStopwatch = Stopwatch.StartNew();
 
@@ -136,6 +147,9 @@ namespace EtlLib.Pipeline
 
             _log.Debug("Disposing of all input/output adapters.");
             _ioAdapters.ForEach(x => x.Dispose());
+
+            _log.Debug("Deallocating all object pools.");
+            _processContext.ObjectPool.DeAllocate();
 
             _log.Debug("Performing garbage collection of all generations.");
             GC.Collect();

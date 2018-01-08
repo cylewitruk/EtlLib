@@ -1,6 +1,4 @@
-﻿using EtlLib.Data;
-using EtlLib.Logging;
-using EtlLib.Nodes;
+﻿using EtlLib.Logging;
 
 namespace EtlLib.Pipeline
 {
@@ -29,13 +27,6 @@ namespace EtlLib.Pipeline
             _loggingAdapter = adapter;
             _context.SetLogger(_loggingAdapter.CreateLogger(LoggerName));
             return this;
-        }
-
-        private void AttachInputToOutput<T>(INodeWithOutput<T> output, INodeWithInput<T> input) where T : class, IFreezable
-        {
-            _context.Log.Info($"Attaching input (Id={input.Id}, Type={input.GetType().Name}) to output (Id={output.Id}, Type={output.GetType().Name}).");
-            var ioAdapter = new InputOutputAdapter<T>(output);
-            ioAdapter.AttachConsumer(input);
         }
 
         public static IEtlPipeline Create()

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using EtlLib.Data;
 using EtlLib.Logging;
@@ -16,7 +13,7 @@ namespace EtlLib.Pipeline.Builders
     }
 
     public interface IEtlProcessCompletedWithResultBuilderContext<TOut> : IEtlProcessCompletedBuilderContext
-        where TOut : class, IFreezable
+        where TOut : class, INodeOutput<TOut>, new()
     {
     }
 
@@ -94,7 +91,7 @@ namespace EtlLib.Pipeline.Builders
 
     public class EtlProcessCompletedWithResultBuilderContext<TOut> : EtlProcessCompletedBuilderContext,
         IEtlProcessCompletedWithResultBuilderContext<TOut>
-        where TOut : class, IFreezable
+        where TOut : class, INodeOutput<TOut>, new()
     {
         public EtlProcessCompletedWithResultBuilderContext(EtlProcessBuilder parentBuilder) 
             : base(parentBuilder)

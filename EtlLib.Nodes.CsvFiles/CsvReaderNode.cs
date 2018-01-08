@@ -42,7 +42,10 @@ namespace EtlLib.Nodes.CsvFiles
 
                 while (reader.Read())
                 {
-                    Emit(Row.FromArray(reader.Context.HeaderRecord, reader.Context.Record));
+                    var row = Context.ObjectPool.Borrow<Row>();
+                    row.Load(reader.Context.HeaderRecord, reader.Context.Record);
+                    Emit(row);
+                    //Emit(Row.FromArray(reader.Context.HeaderRecord, reader.Context.Record));
                 }
 
                 Emitter.SignalEnd();

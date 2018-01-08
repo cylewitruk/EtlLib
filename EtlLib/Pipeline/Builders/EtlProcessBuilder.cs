@@ -13,7 +13,7 @@ namespace EtlLib.Pipeline.Builders
         string Name { get; }
 
         IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlProcessContext, INodeWithOutput<TOut>> ctx)
-            where TOut : class, IFreezable;
+            where TOut : class, INodeOutput<TOut>, new();
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ namespace EtlLib.Pipeline.Builders
         }
 
         public IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlProcessContext, INodeWithOutput<TOut>> ctx) 
-            where TOut : class, IFreezable
+            where TOut : class, INodeOutput<TOut>, new()
         {
             var node = ctx(ProcessContext);
             FirstNode = node;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace EtlLib.Data
 {
-    public class Row : IFreezable, IEnumerable<KeyValuePair<string, object>>
+    public class Row : INodeOutput<Row>, IEnumerable<KeyValuePair<string, object>>
     {
         private readonly Dictionary<string, object> _columns;
         private volatile bool _isFrozen;
@@ -52,6 +52,29 @@ namespace EtlLib.Data
             foreach (var item in _columns)
                 row[item.Key] = item.Value;
             return row;
+        }
+
+        public void Load(string[] columns, object[] values)
+        {
+            if (columns.Length != values.Length)
+                throw new ArgumentException("Length of columns and values must be the same.");
+            
+            for (var i = 0; i < columns.Length; i++)
+            {
+                this[columns[i]] = values[i];
+            }
+        }
+
+        public void CopyTo(Row row)
+        {
+            foreach (var item in _columns)
+                row[item.Key] = item.Value;
+        }
+
+        public void Reset()
+        {
+            _columns.Clear();
+            _isFrozen = false;
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()

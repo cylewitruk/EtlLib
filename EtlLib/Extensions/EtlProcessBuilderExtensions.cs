@@ -1,27 +1,28 @@
 ﻿using System;
 using EtlLib.Data;
 using EtlLib.Nodes.Impl;
+using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
 
 namespace EtlLib
 {
     public static class EtlProcessBuilderExtensions
     {
-        public static IOutputNodeBuilderContext<T> Transform<T>(this IOutputNodeBuilderContext<T> builder, Func<T, T> transform)
-            where T : class, IFreezable
+        public static IOutputNodeBuilderContext<T> Transform<T>(this IOutputNodeBuilderContext<T> builder, Func<EtlProcessContext, T, T> transform)
+            where T : class, INodeOutput<T>, new()
         {
-            return builder.Continue(ctx => new GenericTransformationNode<T>((state, row) => transform(row)));
+            return builder.Continue(ctx => new GenericTransformationNode<T>((state, row) => transform(ctx, row)));
         }
 
         public static IOutputNodeBuilderContext<T> Filter<T>(this IOutputNodeBuilderContext<T> builder, Func<T, bool> predicate)
-            where T : class, IFreezable
+            where T : class, INodeOutput<T>, new()
         {
             return builder.Continue(ctx => new GenericFilterNode<T>(predicate));
         }
 
-        public static IOutputNodeBuilderContext<TOut> Map<TIn, TOut>(this IOutputNodeBuilderContext<TIn> builder, Func<TIn, TOut> map)
-            where TIn : class, IFreezable
-            where TOut : class, IFreezable
+        public static IOutputNodeBuilderContext<TOut> Map<TIn, TOut>(this IOutputNodeBuilderContext<TIn> builder, Func<TIn, TOut, TOut> map)
+            where TIn : class, INodeOutput<TIn>, new()
+            where TOut : class, INodeOutput<TOut>, new()
         {
             return builder.Continue(ctx => new GenericMappingNode<TIn, TOut>(map));
         }
@@ -36,8 +37,13 @@ namespace EtlLib
                 else
                     state[idColumnName] = (int) state[idColumnName] + 1;
 
-                var newRow = row.Copy();
+                //var newRow = row.Copy();
+                //newRow[idColumnName] = state[idColumnName];
+                //return newRow;
+                var newRow = ctx.ObjectPool.Borrow<Row>();
+                row.CopyTo(newRow);
                 newRow[idColumnName] = state[idColumnName];
+                ctx.ObjectPool.Return(row);
                 return newRow;
             }));
         }

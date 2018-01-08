@@ -1,6 +1,6 @@
 ﻿namespace EtlLib.Data
 {
-    public interface IHasFilePath : IFreezable
+    public interface IHasFilePath
     {
         string FilePath { get; }
     }
