@@ -11,6 +11,7 @@ namespace EtlLib.Pipeline
     public interface IInputOutputAdapter : IDisposable
     {
         INode OutputNode { get; }
+        int EmitCount { get; }
 
         bool AttachConsumer<T>(INodeWithInput<T> input) 
             where T : class, INodeOutput<T>, new();
@@ -22,24 +23,27 @@ namespace EtlLib.Pipeline
     public class InputOutputAdapter<T> : IInputOutputAdapter, IEmitter<T>
         where T : class, INodeOutput<T>, new()
     {
-        private readonly ConcurrentDictionary<Guid, BlockingCollection<T>> _queueMap;
+        private readonly ConcurrentDictionary<INode, BlockingCollection<T>> _queueMap;
         private readonly ConcurrentBag<INodeWithInput<T>> _inputs;
         private readonly INodeWithOutput<T> _output;
         private readonly EtlProcessContext _context;
+        private readonly NodeStatistics _nodeStatistics;
         private ILogger _log;
-        private long _emittedItems;
+        private volatile int _emittedItems;
 
         public INode OutputNode => _output;
         public INodeWaitSignaller WaitSignaller { get; }
         public INodeWaiter Waiter { get; }
+        public int EmitCount => _emittedItems;
 
-        public InputOutputAdapter(EtlProcessContext context, INodeWithOutput<T> output)
+        public InputOutputAdapter(EtlProcessContext context, INodeWithOutput<T> output, NodeStatistics nodeStatistics)
         {
-            _queueMap = new ConcurrentDictionary<Guid, BlockingCollection<T>>();
+            _queueMap = new ConcurrentDictionary<INode, BlockingCollection<T>>();
             _inputs = new ConcurrentBag<INodeWithInput<T>>();
             _output = output;
             _log = new NullLogger();
             _context = context;
+            _nodeStatistics = nodeStatistics;
 
             if (output is IBlockingNode)
             {
@@ -60,14 +64,14 @@ namespace EtlLib.Pipeline
             return this;
         }
 
-        public IEnumerable<T> GetConsumingEnumerable(Guid nodeId)
+        public IEnumerable<T> GetConsumingEnumerable(INode node)
         {
-            return _queueMap[nodeId].GetConsumingEnumerable();
+            return _queueMap[node].GetConsumingEnumerable();
         }
 
         public IEnumerable<T> GetConsumingEnumerable(INodeWithInput<T> node)
         {
-            return _queueMap[node.Id].GetConsumingEnumerable();
+            return _queueMap[node].GetConsumingEnumerable();
         }
 
         public bool AttachConsumer<TIn>(INodeWithInput<TIn> input)
@@ -76,7 +80,7 @@ namespace EtlLib.Pipeline
             if (input.Input != null)
                 throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) already has an input assigned.");
 
-            if (!_queueMap.TryAdd(input.Id, new BlockingCollection<T>(new ConcurrentQueue<T>())))
+            if (!_queueMap.TryAdd(input, new BlockingCollection<T>(new ConcurrentQueue<T>())))
                 return false;
 
             _inputs.Add((INodeWithInput<T>)input);
@@ -90,7 +94,7 @@ namespace EtlLib.Pipeline
             if (input.Input != null && input.Input2 != null)
                 throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) has two input slots of which both are already assigned.");
 
-            if (!_queueMap.TryAdd(input.Id, new BlockingCollection<T>(new ConcurrentQueue<T>())))
+            if (!_queueMap.TryAdd(input, new BlockingCollection<T>(new ConcurrentQueue<T>())))
                 return false;
 
             _inputs.Add((INodeWithInput<T>)input);
@@ -105,20 +109,23 @@ namespace EtlLib.Pipeline
             item.Freeze();
             _emittedItems++;
 
+            _nodeStatistics.IncrementWrites(OutputNode);
+
             var firstTarget = true;
-            foreach (var queue in _queueMap.Values)
+            foreach (var queue in _queueMap)
             {
                 if (firstTarget)
                 {
-                    queue.Add(item);
+                    queue.Value.Add(item);
                     firstTarget = false;
                 }
                 else
                 {
                     var duplicatedItem = _context.ObjectPool.Borrow<T>();
                     item.CopyTo(duplicatedItem);
-                    queue.Add(duplicatedItem);
+                    queue.Value.Add(duplicatedItem);
                 }
+                _nodeStatistics.IncrementReads(queue.Key);
             }
 
             if (_emittedItems % 5000 == 0)

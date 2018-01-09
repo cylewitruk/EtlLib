@@ -5,7 +5,7 @@ using EtlLib.Data;
 
 namespace EtlLib.Nodes.CsvFiles
 {
-    public class CsvWriterNode : AbstractInputOutputNode<Row, CsvWriterNodeResult>
+    public class CsvWriterNode : AbstractInputOutputNode<Row, NodeOutputWithFilePath>
     {
         private string _filePath;
         private bool _includeHeader;

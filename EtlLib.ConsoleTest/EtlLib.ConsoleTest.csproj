@@ -32,6 +32,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AWSSDK.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
+      <HintPath>..\packages\AWSSDK.Core.3.3.21.6\lib\net45\AWSSDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="AWSSDK.S3, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
+      <HintPath>..\packages\AWSSDK.S3.3.3.16.2\lib\net45\AWSSDK.S3.dll</HintPath>
+    </Reference>
     <Reference Include="CsvHelper, Version=6.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
       <HintPath>..\packages\CsvHelper.6.1.0\lib\net45\CsvHelper.dll</HintPath>
     </Reference>
@@ -71,6 +77,10 @@
       <Project>{8671742c-02cf-460c-9528-f26aeef03223}</Project>
       <Name>EtlLib.Logging.NLog</Name>
     </ProjectReference>
+    <ProjectReference Include="..\EtlLib.Nodes.AmazonS3\EtlLib.Nodes.AmazonS3.csproj">
+      <Project>{434F76E9-26E0-4998-AC3A-381F86A3A692}</Project>
+      <Name>EtlLib.Nodes.AmazonS3</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EtlLib.Nodes.CsvFiles\EtlLib.Nodes.CsvFiles.csproj">
       <Project>{3F674523-8B41-40E2-B5B7-F2F105F99F6D}</Project>
       <Name>EtlLib.Nodes.CsvFiles</Name>
@@ -79,6 +89,9 @@
       <Project>{2850690c-13a9-442b-a71c-5f2273730d8a}</Project>
       <Name>EtlLib</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\AWSSDK.S3.3.3.16.2\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

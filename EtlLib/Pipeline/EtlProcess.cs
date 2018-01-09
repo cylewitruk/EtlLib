@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using EtlLib.Data;
 using EtlLib.Logging;
@@ -18,6 +19,7 @@ namespace EtlLib.Pipeline
         private readonly List<string> _attachmentDeduplicationList;
         private readonly List<INode> _nodes;
         private readonly EtlProcessSettings _settings;
+        private readonly NodeStatistics _nodeStatistics;
 
         public INodeWithOutput RootNode { get; }
         public string Name { get; }
@@ -31,6 +33,7 @@ namespace EtlLib.Pipeline
             _ioAdapters = new List<IInputOutputAdapter>();
             _attachmentDeduplicationList = new List<string>();
             _nodes = new List<INode>();
+            _nodeStatistics = new NodeStatistics();
             
             _processContext = context;
 
@@ -44,6 +47,7 @@ namespace EtlLib.Pipeline
 
             node.SetContext(_processContext);
             _nodes.Add(node);
+            _nodeStatistics.RegisterNode(node);
         }
 
         private void RegisterNodes(params INode[] nodes)
@@ -67,7 +71,7 @@ namespace EtlLib.Pipeline
 
             if (!(_ioAdapters.SingleOrDefault(x => x.OutputNode.Equals(output)) is InputOutputAdapter<T> ioAdapter))
             {
-                ioAdapter = new InputOutputAdapter<T>(_processContext, output)
+                ioAdapter = new InputOutputAdapter<T>(_processContext, output, _nodeStatistics)
                     .WithLogger(_settings.LoggingAdapter.CreateLogger("EtlLib.IOAdapter"));
 
                 output.SetEmitter(ioAdapter);
@@ -123,8 +127,11 @@ namespace EtlLib.Pipeline
                 }
             }
 
+            var elapsedDict = new Dictionary<INode, TimeSpan>();
+
             var tasks = new List<Task>();
             var processStopwatch = Stopwatch.StartNew();
+
 
             foreach (var node in _nodes)
             {
@@ -135,6 +142,7 @@ namespace EtlLib.Pipeline
                         node.Execute();
                         sw.Stop();
                         _log.Info($"Execute task for node {node} has completed in {sw.Elapsed}.");
+                        elapsedDict[node] = sw.Elapsed;
                     });
 
                 tasks.Add(task);
@@ -146,6 +154,25 @@ namespace EtlLib.Pipeline
 
             _log.Info($"=== ETL Process '{Name}' has completed (Runtime {processStopwatch.Elapsed}) ===");
 
+            _log.Info("Execution statisticts:");
+            var elapsedStats = elapsedDict.OrderBy(x => x.Value.TotalMilliseconds).ToArray();
+            for (var i = 0; i < elapsedStats.Length; i++)
+            {
+                var sb = new StringBuilder();
+                sb.Append($" * {elapsedStats[i].Key} => Elapsed: {elapsedStats[i].Value}");
+                var ioAdapter = _ioAdapters.SingleOrDefault(x => x.OutputNode == elapsedStats[i].Key);
+
+                var nodeStats = _nodeStatistics.GetNodeStatistics(elapsedStats[i].Key);
+                sb.Append($" [R={nodeStats.Reads}, W={nodeStats.Writes}, E={nodeStats.Errors}]");
+
+                if (i == 0)
+                    sb.Append(" (fastest)");
+                else if (i == elapsedStats.Length - 1)
+                    sb.Append(" (slowest)");
+                
+                _log.Info(sb.ToString());
+            }
+
             _log.Debug("Disposing of all input/output adapters.");
             _ioAdapters.ForEach(x => x.Dispose());
 
@@ -154,6 +181,52 @@ namespace EtlLib.Pipeline
 
             _log.Debug("Performing garbage collection of all generations.");
             GC.Collect();
+        }
+    }
+
+    public class NodeStatistics
+    {
+        private readonly Dictionary<INode, SingleNodeStatistics> _stats;
+
+        public NodeStatistics()
+        {
+            _stats = new Dictionary<INode, SingleNodeStatistics>();
+        }
+
+        public void IncrementReads(INode node) => _stats[node].IncrementReads();
+        public void IncrementWrites(INode node) => _stats[node].IncrementWrites();
+        public void IncrementErrors(INode node) => _stats[node].IncrementErrors();
+        public void RegisterNode(INode node) => _stats[node] = new SingleNodeStatistics();
+        public SingleNodeStatistics GetNodeStatistics(INode node) => _stats[node];
+        
+
+        public class SingleNodeStatistics
+        {
+            private volatile uint _reads, _writes, _errors;
+            
+            public uint Reads => _reads;
+            public uint Writes => _writes;
+            public uint Errors => _errors;
+
+            public SingleNodeStatistics()
+            {
+                _reads = _writes = _errors = 0;
+            }
+
+            public void IncrementReads()
+            {
+                _reads++;
+            }
+
+            public void IncrementWrites()
+            {
+                _writes++;
+            }
+
+            public void IncrementErrors()
+            {
+                _errors++;
+            }
         }
     }
 }

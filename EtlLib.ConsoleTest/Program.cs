@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Runtime.InteropServices.ComTypes;
+using Amazon;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
+using EtlLib.Nodes.AmazonS3;
 using EtlLib.Nodes.CsvFiles;
 using EtlLib.Nodes.Impl;
 using EtlLib.Pipeline.Builders;
@@ -10,6 +11,7 @@ namespace EtlLib.ConsoleTest
 {
     internal class Program
     {
+        // S3 ***REMOVED*** (AccessKey: ***REMOVED***, SecretKey: ***REMOVED***)
         private static void Main(string[] args)
         {
             var loggingAdapter = new NLogLoggingAdapter();
@@ -38,7 +40,10 @@ namespace EtlLib.ConsoleTest
                     ctx.ObjectPool.Return(row);
                     return newRow;
                 })
-                .Complete(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting_TRANSFORMED.csv"));
+                .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting_TRANSFORMED.csv"))
+                .Complete(ctx => new AmazonS3WriterNode(***REMOVED***, "***REMOVED***")
+                    .WithBasicCredentials("***REMOVED***", "***REMOVED***")
+                );
 
             builder.PrintGraph();
 
