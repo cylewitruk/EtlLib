@@ -3,7 +3,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes
 {
-    public abstract class AbstractOutputNode<TOut> : Node, INodeWithOutput<TOut>
+    public abstract class AbstractOutputNode<TOut> : AbstractNode, INodeWithOutput<TOut>
         where TOut : class, INodeOutput<TOut>, new()
     {
         public IEmitter<TOut> Emitter { get; private set; }

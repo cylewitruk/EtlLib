@@ -30,11 +30,9 @@ namespace EtlLib.ConsoleTest
                 .Filter(row => !string.IsNullOrWhiteSpace((string)row["RBI"]))
                 .Continue(ctx => new GenericFilterNode<Row>(row => row.GetAs<int>("RBI") > 10))
                 .Filter(row => row.GetAs<int>("HR") > 1)
-                //.BlockingExecute((ctx, builder) => builder.)
                 .Transform((ctx, row) =>
                 {
                     var newRow = ctx.ObjectPool.Borrow<Row>();
-                    //var newRow = row.Copy();
                     row.CopyTo(newRow);
                     newRow["is_transformed"] = true;
                     ctx.ObjectPool.Return(row);
@@ -53,27 +51,6 @@ namespace EtlLib.ConsoleTest
 
             Console.WriteLine("\nPress enter to exit...\n");
             Console.ReadLine();
-        }
-    }
-
-    public class MapTest : INodeOutput<MapTest>
-    {
-        public long Id { get; private set; }
-        public bool IsFrozen { get; private set; }
-        public void Freeze()
-        {
-            IsFrozen = true;
-        }
-
-        public void CopyTo(MapTest obj)
-        {
-            obj.Id = Id;
-        }
-
-        public void Reset()
-        {
-            Id = 0;
-            IsFrozen = false;
         }
     }
 

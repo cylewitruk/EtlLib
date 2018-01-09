@@ -3,7 +3,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes
 {
-    public abstract class Node : INode
+    public abstract class AbstractNode : INode
     {
         public Guid Id { get; private set; }
         public EtlProcessContext Context { get; private set; }
@@ -46,7 +46,7 @@ namespace EtlLib.Nodes
             return base.Equals(obj);
         }
 
-        protected bool Equals(Node other)
+        protected bool Equals(AbstractNode other)
         {
             return Id.Equals(other.Id);
         }
@@ -54,16 +54,6 @@ namespace EtlLib.Nodes
         public override int GetHashCode()
         {
             return Id.GetHashCode();
-        }
-    }
-
-    public abstract class BlockingNode : Node, IBlockingNode
-    {
-        public INodeWaitSignaller WaitSignaller { get; private set; }
-        public INode SetWaitSignaller(INodeWaitSignaller signaller)
-        {
-            WaitSignaller = signaller;
-            return this;
         }
     }
 }

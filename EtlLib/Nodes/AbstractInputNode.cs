@@ -3,7 +3,7 @@ using EtlLib.Data;
 
 namespace EtlLib.Nodes
 {
-    public abstract class AbstractInputNode<TIn> : Node, INodeWithInput<TIn>
+    public abstract class AbstractInputNode<TIn> : AbstractNode, INodeWithInput<TIn>
         where TIn : class, INodeOutput<TIn>, new()
     {
         public IEnumerable<TIn> Input { get; private set; }
