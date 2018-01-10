@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using EtlLib.Data;
 using EtlLib.Nodes.Impl;
 using EtlLib.Pipeline;
@@ -25,6 +26,14 @@ namespace EtlLib
             where TOut : class, INodeOutput<TOut>, new()
         {
             return builder.Continue(ctx => new GenericMappingNode<TIn, TOut>(map));
+        }
+
+        public static IOutputNodeBuilderContext<Row> Categorize(this IOutputNodeBuilderContext<Row> builder,
+            string outputColumn, Action<GenericClassificationNode<Row, string, object>> cat)
+        {
+            var node = new GenericClassificationNode<Row, string, object>(row => row[outputColumn]);
+            cat(node);
+            return builder.Continue(ctx => node);
         }
 
         public static IOutputNodeBuilderContext<Row> GenerateRowNumbers(this IOutputNodeBuilderContext<Row> builder,

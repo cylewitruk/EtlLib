@@ -25,11 +25,20 @@ namespace EtlLib.ConsoleTest
                         .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!")
                         .RegisterObjectPool<Row>(100000);
                 })
-                .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting.csv"))
+                .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
                 .GenerateRowNumbers("_id")
-                .Filter(row => !string.IsNullOrWhiteSpace((string)row["RBI"]))
-                .Continue(ctx => new GenericFilterNode<Row>(row => row.GetAs<int>("RBI") > 10))
-                .Filter(row => row.GetAs<int>("HR") > 1)
+                .Categorize("income_segment", cat =>
+                {
+                    decimal Income(Row row) => row.GetAs<decimal>("annual_inc");
+
+                    cat
+                        .When(x => string.IsNullOrWhiteSpace(x.GetAs<string>("annual_inc")), "UNKNOWN")
+                        .When(x => Income(x) < 10000L, "0-9999")
+                        .When(x => Income(x) < 20000L, "10000-19999")
+                        .When(x => Income(x) < 30000L, "20000-29999")
+                        .Default("30000+");
+                })
+                .Filter(row => row.GetAs<string>("grade") == "A")
                 .Transform((ctx, row) =>
                 {
                     var newRow = ctx.ObjectPool.Borrow<Row>();
@@ -38,7 +47,7 @@ namespace EtlLib.ConsoleTest
                     ctx.ObjectPool.Return(row);
                     return newRow;
                 })
-                .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\baseballdatabank-2017.1\baseballdatabank-2017.1\core\Batting_TRANSFORMED.csv"))
+                .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv"))
                 .Complete(ctx => new AmazonS3WriterNode(***REMOVED***, "***REMOVED***")
                     .WithBasicCredentials("***REMOVED***", "***REMOVED***")
                 );

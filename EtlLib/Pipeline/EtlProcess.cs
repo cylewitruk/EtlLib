@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -127,7 +128,7 @@ namespace EtlLib.Pipeline
                 }
             }
 
-            var elapsedDict = new Dictionary<INode, TimeSpan>();
+            var elapsedDict = new ConcurrentDictionary<INode, TimeSpan>();
 
             var tasks = new List<Task>();
             var processStopwatch = Stopwatch.StartNew();
