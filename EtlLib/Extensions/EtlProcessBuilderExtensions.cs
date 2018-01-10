@@ -28,7 +28,7 @@ namespace EtlLib
             return builder.Continue(ctx => new GenericMappingNode<TIn, TOut>(map));
         }
 
-        public static IOutputNodeBuilderContext<Row> Categorize(this IOutputNodeBuilderContext<Row> builder,
+        public static IOutputNodeBuilderContext<Row> Classify(this IOutputNodeBuilderContext<Row> builder,
             string outputColumn, Action<GenericClassificationNode<Row, string, object>> cat)
         {
             var node = new GenericClassificationNode<Row, string, object>(row => row[outputColumn]);

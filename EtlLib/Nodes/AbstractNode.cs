@@ -1,4 +1,5 @@
 ﻿using System;
+using EtlLib.Data;
 using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes
@@ -8,6 +9,7 @@ namespace EtlLib.Nodes
         public Guid Id { get; private set; }
         public EtlProcessContext Context { get; private set; }
         public INodeWaiter Waiter { get; private set; }
+        public IErrorHandler ErrorHandler { get; private set; }
 
         public INode SetId(Guid id)
         {
@@ -27,11 +29,34 @@ namespace EtlLib.Nodes
             return this;
         }
 
+        public INode SetErrorHandler(IErrorHandler errorHandler)
+        {
+            ErrorHandler = errorHandler;
+            return this;
+        }
+
+        protected void RaiseError(Exception e)
+        {
+            ErrorHandler?.RaiseError(this, e);
+        }
+
+        protected void RaiseError(Exception e, INodeOutput item)
+        {
+            ErrorHandler?.RaiseError(this, e, item);
+        }
+
         public void Execute()
         {
             Waiter?.Wait();
 
-            OnExecute();
+            try
+            {
+                OnExecute();
+            }
+            catch (Exception e)
+            {
+                RaiseError(e);
+            }
         }
 
         public abstract void OnExecute();

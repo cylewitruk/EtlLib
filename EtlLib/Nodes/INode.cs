@@ -10,10 +10,12 @@ namespace EtlLib.Nodes
         Guid Id { get; }
         EtlProcessContext Context { get; }
         INodeWaiter Waiter { get; }
+        IErrorHandler ErrorHandler { get; }
 
         INode SetId(Guid id);
         INode SetContext(EtlProcessContext context);
         INode SetWaiter(INodeWaiter waiter);
+        INode SetErrorHandler(IErrorHandler errorHandler);
 
         void Execute();
     }

@@ -27,12 +27,12 @@ namespace EtlLib.ConsoleTest
                 })
                 .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
                 .GenerateRowNumbers("_id")
-                .Categorize("income_segment", cat =>
+                .Classify("income_segment", cat =>
                 {
                     decimal Income(Row row) => row.GetAs<decimal>("annual_inc");
 
                     cat
-                        .When(x => string.IsNullOrWhiteSpace(x.GetAs<string>("annual_inc")), "UNKNOWN")
+                        //.When(x => string.IsNullOrWhiteSpace(x.GetAs<string>("annual_inc")), "UNKNOWN")
                         .When(x => Income(x) < 10000L, "0-9999")
                         .When(x => Income(x) < 20000L, "10000-19999")
                         .When(x => Income(x) < 30000L, "20000-29999")

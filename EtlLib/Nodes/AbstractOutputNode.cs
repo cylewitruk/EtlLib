@@ -1,4 +1,5 @@
-﻿using EtlLib.Data;
+﻿using System;
+using EtlLib.Data;
 using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes

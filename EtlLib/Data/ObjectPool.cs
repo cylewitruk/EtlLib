@@ -13,6 +13,7 @@ namespace EtlLib.Data
         object BorrowObject();
         void ReturnObject(object o);
         void DeAllocate();
+        Type Type { get; }
     }
 
     public class ObjectPool<T>  : IObjectPool
@@ -23,6 +24,8 @@ namespace EtlLib.Data
         private readonly Stack<T> _stack;
 
         #region Properties
+
+        public Type Type => typeof(T);
 
         public Func<int, T> CustomCreateInstance { get; set; }
 

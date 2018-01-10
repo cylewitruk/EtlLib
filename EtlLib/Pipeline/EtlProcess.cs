@@ -21,6 +21,7 @@ namespace EtlLib.Pipeline
         private readonly List<INode> _nodes;
         private readonly EtlProcessSettings _settings;
         private readonly NodeStatistics _nodeStatistics;
+        private readonly IErrorHandler _errorHandler;
 
         public INodeWithOutput RootNode { get; }
         public string Name { get; }
@@ -35,6 +36,19 @@ namespace EtlLib.Pipeline
             _attachmentDeduplicationList = new List<string>();
             _nodes = new List<INode>();
             _nodeStatistics = new NodeStatistics();
+            _errorHandler = new ErrorHandler()
+            {
+                OnItemErrorFn = (n, e, i) =>
+                {
+                    _log.Error(e.ToString());
+                    _nodeStatistics.IncrementErrors(n);
+                },
+                OnErrorFn = (n, e) =>
+                {
+                    _log.Error(e.ToString());
+                    _nodeStatistics.IncrementErrors(n);
+                }
+            };
             
             _processContext = context;
 
@@ -46,7 +60,9 @@ namespace EtlLib.Pipeline
             if (_nodes.Contains(node))
                 return;
 
-            node.SetContext(_processContext);
+            node
+                .SetContext(_processContext)
+                .SetErrorHandler(_errorHandler);
             _nodes.Add(node);
             _nodeStatistics.RegisterNode(node);
         }
@@ -110,7 +126,9 @@ namespace EtlLib.Pipeline
 
         public void Execute()
         {
-            _log.Info($"=== Executing ETL Process '{Name}' (Started {DateTime.Now}) ===");
+            _log.Info(new string('=', 80));
+            _log.Info($"= Executing ETL Process '{Name}' (Started {DateTime.Now})");
+            _log.Info(new string('=', 80));
 
             if (_settings.ContextInitializer != null)
             {
@@ -153,14 +171,17 @@ namespace EtlLib.Pipeline
 
             processStopwatch.Stop();
 
-            _log.Info($"=== ETL Process '{Name}' has completed (Runtime {processStopwatch.Elapsed}) ===");
+            _log.Info(new string('=', 80));
+            _log.Info($"= ETL Process '{Name}' has completed (Runtime {processStopwatch.Elapsed})");
+            _log.Info(new string('=', 80));
 
-            _log.Info("Execution statisticts:");
+            _log.Info("= EXECUTION STATISTICS");
+            _log.Info("= Nodes:");
             var elapsedStats = elapsedDict.OrderBy(x => x.Value.TotalMilliseconds).ToArray();
             for (var i = 0; i < elapsedStats.Length; i++)
             {
                 var sb = new StringBuilder();
-                sb.Append($" * {elapsedStats[i].Key} => Elapsed: {elapsedStats[i].Value}");
+                sb.Append($"= * {elapsedStats[i].Key} => Elapsed: {elapsedStats[i].Value}");
                 var ioAdapter = _ioAdapters.SingleOrDefault(x => x.OutputNode == elapsedStats[i].Key);
 
                 var nodeStats = _nodeStatistics.GetNodeStatistics(elapsedStats[i].Key);
@@ -173,61 +194,23 @@ namespace EtlLib.Pipeline
                 
                 _log.Info(sb.ToString());
             }
+            _log.Info($"= Total Reads:  {_nodeStatistics.TotalReads}");
+            _log.Info($"= Total Writes: {_nodeStatistics.TotalWrites}");
+            _log.Info($"= Total Errors: {_nodeStatistics.TotalErrors}");
+            _log.Info(new string('=', 80));
 
             _log.Debug("Disposing of all input/output adapters.");
             _ioAdapters.ForEach(x => x.Dispose());
 
-            _log.Debug("Deallocating all object pools.");
+            _log.Debug("Deallocating all object pools:");
+            foreach (var pool in _processContext.ObjectPool.Pools)
+            {
+                _log.Debug($" * ObjectPool<{pool.Type.Name}> => Referenced: {pool.Referenced}, Free: {pool.Free}");
+            }
             _processContext.ObjectPool.DeAllocate();
 
             _log.Debug("Performing garbage collection of all generations.");
             GC.Collect();
-        }
-    }
-
-    public class NodeStatistics
-    {
-        private readonly Dictionary<INode, SingleNodeStatistics> _stats;
-
-        public NodeStatistics()
-        {
-            _stats = new Dictionary<INode, SingleNodeStatistics>();
-        }
-
-        public void IncrementReads(INode node) => _stats[node].IncrementReads();
-        public void IncrementWrites(INode node) => _stats[node].IncrementWrites();
-        public void IncrementErrors(INode node) => _stats[node].IncrementErrors();
-        public void RegisterNode(INode node) => _stats[node] = new SingleNodeStatistics();
-        public SingleNodeStatistics GetNodeStatistics(INode node) => _stats[node];
-        
-
-        public class SingleNodeStatistics
-        {
-            private volatile uint _reads, _writes, _errors;
-            
-            public uint Reads => _reads;
-            public uint Writes => _writes;
-            public uint Errors => _errors;
-
-            public SingleNodeStatistics()
-            {
-                _reads = _writes = _errors = 0;
-            }
-
-            public void IncrementReads()
-            {
-                _reads++;
-            }
-
-            public void IncrementWrites()
-            {
-                _writes++;
-            }
-
-            public void IncrementErrors()
-            {
-                _errors++;
-            }
         }
     }
 }

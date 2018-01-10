@@ -49,23 +49,32 @@ namespace EtlLib.Nodes.Impl
             foreach (var item in Input)
             {
                 var newItem = Context.ObjectPool.Borrow<T>();
-                item.CopyTo(newItem);
-                var matchedPredicate = false;
-
-                foreach (var predicate in _classFns)
+                try
                 {
-                    if (!predicate.Value(item))
-                        continue;
+                    item.CopyTo(newItem);
+                    var matchedPredicate = false;
 
-                    SetValue(newItem, predicate.Key);
-                    matchedPredicate = true;
-                    break;
+                    foreach (var predicate in _classFns)
+                    {
+                        if (!predicate.Value(item))
+                            continue;
+
+                        SetValue(newItem, predicate.Key);
+                        matchedPredicate = true;
+                        break;
+                    }
+
+                    if (!matchedPredicate)
+                        SetValue(newItem, _defaultClass);
+
+                    Emit(newItem);
+                    Context.ObjectPool.Return(item);
                 }
-
-                if (!matchedPredicate)
-                    SetValue(newItem, _defaultClass);
-
-                Emit(newItem);
+                catch (Exception e)
+                {
+                    Context.ObjectPool.Return(newItem);
+                    RaiseError(e, item);
+                }
             }
 
             Emitter.SignalEnd();
@@ -109,7 +118,10 @@ namespace EtlLib.Nodes.Impl
 
             if (expression.Body is MethodCallExpression methodCallExpression)
             {
-                _indexerKey = (TKey)((ConstantExpression)methodCallExpression.Arguments[0]).Value;
+                var fieldName = ((MemberExpression) methodCallExpression.Arguments[0]).Member.Name;
+                var tmp = ((ConstantExpression) ((MemberExpression) methodCallExpression.Arguments[0]).Expression).Value;
+                _indexerKey = (TKey)tmp.GetType().GetField(fieldName).GetValue(tmp);
+                //_indexerKey = (TKey)((ConstantExpression)methodCallExpression.Arguments[0]).Value;
 
                 ParameterExpression param = Expression.Parameter(typeof(T), "t");
                 ParameterExpression keyExpr = Expression.Parameter(methodCallExpression.Arguments[0].Type);
