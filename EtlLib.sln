@@ -11,17 +11,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Logging.NLog", "EtlL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.CsvFiles", "EtlLib.Nodes.CsvFiles\EtlLib.Nodes.CsvFiles.csproj", "{3F674523-8B41-40E2-B5B7-F2F105F99F6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.SqlServer", "EtlLib.Nodes.SqlServer\EtlLib.Nodes.SqlServer.csproj", "{77C108E9-7AC5-43D8-A612-0208E09C1122}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.SqlServer", "EtlLib.Nodes.SqlServer\EtlLib.Nodes.SqlServer.csproj", "{77C108E9-7AC5-43D8-A612-0208E09C1122}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.AmazonS3", "EtlLib.Nodes.AmazonS3\EtlLib.Nodes.AmazonS3.csproj", "{434F76E9-26E0-4998-AC3A-381F86A3A692}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.AmazonS3", "EtlLib.Nodes.AmazonS3\EtlLib.Nodes.AmazonS3.csproj", "{434F76E9-26E0-4998-AC3A-381F86A3A692}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.MongoDb", "EtlLib.Nodes.MongoDb\EtlLib.Nodes.MongoDb.csproj", "{792D5820-87EE-442D-9F76-8A8D7BE8EDEB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.MongoDb", "EtlLib.Nodes.MongoDb\EtlLib.Nodes.MongoDb.csproj", "{792D5820-87EE-442D-9F76-8A8D7BE8EDEB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{A0A891E0-D63C-44B2-ADC4-EC5973E79794}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nodes", "Nodes", "{56301CF0-0EC6-415D-928C-9AD9263DB371}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{008631DB-0533-426A-8A32-3A4886AE34F7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.Dapper", "EtlLib.Nodes.Dapper\EtlLib.Nodes.Dapper.csproj", "{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,10 @@ Global
 		{792D5820-87EE-442D-9F76-8A8D7BE8EDEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{792D5820-87EE-442D-9F76-8A8D7BE8EDEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{792D5820-87EE-442D-9F76-8A8D7BE8EDEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -69,6 +75,7 @@ Global
 		{77C108E9-7AC5-43D8-A612-0208E09C1122} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 		{434F76E9-26E0-4998-AC3A-381F86A3A692} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 		{792D5820-87EE-442D-9F76-8A8D7BE8EDEB} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
+		{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {35A58916-7182-4058-B44F-F19927D47BA6}

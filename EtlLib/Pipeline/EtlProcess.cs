@@ -40,12 +40,12 @@ namespace EtlLib.Pipeline
             {
                 OnItemErrorFn = (n, e, i) =>
                 {
-                    _log.Error(e.ToString());
+                    _log.Error(e.Message);
                     _nodeStatistics.IncrementErrors(n);
                 },
                 OnErrorFn = (n, e) =>
                 {
-                    _log.Error(e.ToString());
+                    _log.Error(e.Message);
                     _nodeStatistics.IncrementErrors(n);
                 }
             };
