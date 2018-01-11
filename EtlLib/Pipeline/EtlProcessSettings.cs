@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using EtlLib.Logging;
 
-namespace EtlLib.Pipeline.Builders
+namespace EtlLib.Pipeline
 {
     public class EtlProcessSettings
     {
