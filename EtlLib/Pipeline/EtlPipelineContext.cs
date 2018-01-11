@@ -9,16 +9,16 @@ namespace EtlLib.Pipeline
     public class EtlPipelineContext
     {
         public IDictionary<string, object> State { get; }
-        public ILogger Log { get; private set; }
+        public ILoggingAdapter LoggingAdapter { get; private set; }
 
         internal IDictionary<INode, Exception> Errors { get; }
-        internal void SetLogger(ILogger log) => Log = log;
+        internal void SetLoggingAdapter(ILoggingAdapter loggingAdapter) => LoggingAdapter = loggingAdapter;
 
-        public EtlPipelineContext(ILogger logger)
+        public EtlPipelineContext(ILoggingAdapter loggingAdapter)
         {
             State = new ConcurrentDictionary<string, object>();
             Errors = new ConcurrentDictionary<INode, Exception>();
-            Log = logger;
+            LoggingAdapter = loggingAdapter;
         }
     }
 }

@@ -5,6 +5,7 @@ using EtlLib.Logging.NLog;
 using EtlLib.Nodes.AmazonS3;
 using EtlLib.Nodes.CsvFiles;
 using EtlLib.Nodes.Impl;
+using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.ConsoleTest
@@ -56,7 +57,15 @@ namespace EtlLib.ConsoleTest
 
             var process = builder.Build();
 
-            process.Execute();
+            var pipeline = EtlPipeline.Create(cfg =>
+                {
+                    cfg
+                        .Named("Test ETL Process")
+                        .WithLoggingAdapter(loggingAdapter);
+                })
+                .Run(process);
+
+            pipeline.Execute();
 
             Console.WriteLine("\nPress enter to exit...\n");
             Console.ReadLine();

@@ -1,4 +1,6 @@
-﻿using EtlLib.Logging;
+﻿using System;
+using EtlLib.Logging;
+using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.Pipeline
 {
@@ -6,6 +8,8 @@ namespace EtlLib.Pipeline
     {
         PipelineResult Execute();
 
-        IEtlPipeline WithLoggingAdapter(ILoggingAdapter adapter);
+        IEtlPipeline Run(Action<EtlProcessSettings> settings, Action<IEtlProcessBuilder> builder);
+        IEtlPipeline Run(IExecutable executable);
+        IEtlPipeline RunParallel(params IExecutable[] executables);
     }
 }

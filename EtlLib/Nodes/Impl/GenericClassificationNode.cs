@@ -86,9 +86,11 @@ namespace EtlLib.Nodes.Impl
                 _memberSetter(item, value);
             else if (_indexerSetter != null)
                 _indexerSetter(item, _indexerKey, value);
+            else
+                throw new InvalidOperationException("Could not set value, neither a member or indexer setter are available.");
         }
 
-        private bool TryGetSetter(Expression<Func<T, TClass>> expression, out Action<T, TClass> setter)
+        private static bool TryGetSetter(Expression<Func<T, TClass>> expression, out Action<T, TClass> setter)
         {
             setter = null;
             if (!(expression.Body is MemberExpression memberExpression))
@@ -108,49 +110,35 @@ namespace EtlLib.Nodes.Impl
                 );
 
             setter = newExpression.Compile();
-            return true;
 
+            return true;
         }
 
         private bool TryGetIndexerSetter(Expression<Func<T, TClass>> expression, out Action<T, TKey, TClass> indexerSetter)
         {
             indexerSetter = null;
 
-            if (expression.Body is MethodCallExpression methodCallExpression)
-            {
-                var fieldName = ((MemberExpression) methodCallExpression.Arguments[0]).Member.Name;
-                var tmp = ((ConstantExpression) ((MemberExpression) methodCallExpression.Arguments[0]).Expression).Value;
-                _indexerKey = (TKey)tmp.GetType().GetField(fieldName).GetValue(tmp);
-                //_indexerKey = (TKey)((ConstantExpression)methodCallExpression.Arguments[0]).Value;
+            if (!(expression.Body is MethodCallExpression methodCallExpression))
+                return false;
 
-                ParameterExpression param = Expression.Parameter(typeof(T), "t");
-                ParameterExpression keyExpr = Expression.Parameter(methodCallExpression.Arguments[0].Type);
-                ParameterExpression valueExpr = Expression.Parameter(typeof(TClass));
+            var fieldName = ((MemberExpression) methodCallExpression.Arguments[0]).Member.Name;
+            var tmp = ((ConstantExpression) ((MemberExpression) methodCallExpression.Arguments[0]).Expression).Value;
+            _indexerKey = (TKey)tmp.GetType().GetField(fieldName).GetValue(tmp);
+            //_indexerKey = (TKey)((ConstantExpression)methodCallExpression.Arguments[0]).Value;
 
-                // optional?
-                var indexer = param.Type.GetProperty("Item");
-                //var setter = indexer.GetSetMethod(false);
-                var actionT = typeof(Action<,,>).MakeGenericType(typeof(T), methodCallExpression.Arguments[0].Type, methodCallExpression.Method.ReturnType);
-                //return Delegate.CreateDelegate(actionT, setter);
+            ParameterExpression param = Expression.Parameter(typeof(T), "t");
+            ParameterExpression keyExpr = Expression.Parameter(methodCallExpression.Arguments[0].Type);
+            ParameterExpression valueExpr = Expression.Parameter(typeof(TClass));
+            
+            var indexer = param.Type.GetProperty("Item");
 
-                IndexExpression indexExpr = Expression.Property(param, indexer, keyExpr);
+            IndexExpression indexExpr = Expression.Property(param, indexer, keyExpr);
+            BinaryExpression assign = Expression.Assign(indexExpr, valueExpr);
 
-                BinaryExpression assign = Expression.Assign(indexExpr, valueExpr);
+            var lambdaSetter = Expression.Lambda<Action<T, TKey, TClass>>(assign, param, keyExpr, valueExpr);
+            indexerSetter = lambdaSetter.Compile();
 
-
-
-                var lambdaSetter = Expression.Lambda<Action<T, TKey, TClass>>(assign, param, keyExpr, valueExpr);
-                //var lambdaGetter = Expression.Lambda<Func<T, TKey, TClass>>(indexExpr, param, keyExpr);
-                indexerSetter = lambdaSetter.Compile();
-                return true;
-
-                //MemberExpression member = Expression.Property(param, "EmployeeName");
-                //var body = Expression.Property(param, "Item");
-                //var lambda = Expression.Lambda<Action<T, TClass>>(body, param);
-                //return lambda.Compile();
-            }
-
-            return false;
+            return true;
         }
     }
 }
