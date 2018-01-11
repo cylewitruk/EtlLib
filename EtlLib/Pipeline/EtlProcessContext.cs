@@ -1,28 +1,24 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EtlLib.Logging;
-using EtlLib.Nodes;
 
 namespace EtlLib.Pipeline
 {
     public class EtlProcessContext<T>
-        where T : new()
+        where T : class, new()
     {
         public T State { get; }
         public IDictionary<string, object> StateDict { get; }
         public ILoggingAdapter LoggingAdapter { get; }
-        public ObjectPoolContainer ObjectPool { get; }
-
-        internal IDictionary<INode, Exception> Errors { get; }
+        public EtlPipelineContext PipelineContext { get; }
+        public ObjectPoolContainer ObjectPool => PipelineContext.ObjectPool;
 
         public EtlProcessContext(ILoggingAdapter loggingAdapter)
         {
             StateDict = new ConcurrentDictionary<string, object>();
-            Errors = new ConcurrentDictionary<INode, Exception>();
             LoggingAdapter = loggingAdapter;
             State = new T();
-            ObjectPool = new ObjectPoolContainer();
+            PipelineContext = new EtlPipelineContext(loggingAdapter);
         }
     }
 

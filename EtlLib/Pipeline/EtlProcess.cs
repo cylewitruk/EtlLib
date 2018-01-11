@@ -12,7 +12,7 @@ using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.Pipeline
 {
-    public class EtlProcess : IExecutable
+    public class EtlProcess : IExecutable, IDisposable
     {
         private readonly EtlProcessContext _processContext;
         private readonly ILogger _log;
@@ -136,16 +136,6 @@ namespace EtlLib.Pipeline
                 _settings.ContextInitializer(_processContext);
             }
 
-            if (_settings.ObjectPoolRegistrations.Count > 0)
-            {
-                _log.Info("Initializing object pools...");
-                foreach (var pool in _settings.ObjectPoolRegistrations)
-                {
-                    _log.Info($" - ObjectPool<{pool.Type.Name}> (InitialSize={pool.InitialSize}, AutoGrow={pool.AutoGrow})");
-                    _processContext.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
-                }
-            }
-
             var elapsedDict = new ConcurrentDictionary<INode, TimeSpan>();
 
             var tasks = new List<Task>();
@@ -198,19 +188,12 @@ namespace EtlLib.Pipeline
             _log.Info($"= Total Writes: {_nodeStatistics.TotalWrites}");
             _log.Info($"= Total Errors: {_nodeStatistics.TotalErrors}");
             _log.Info(new string('=', 80));
+        }
 
+        public void Dispose()
+        {
             _log.Debug("Disposing of all input/output adapters.");
             _ioAdapters.ForEach(x => x.Dispose());
-
-            _log.Debug("Deallocating all object pools:");
-            foreach (var pool in _processContext.ObjectPool.Pools)
-            {
-                _log.Debug($" * ObjectPool<{pool.Type.Name}> => Referenced: {pool.Referenced}, Free: {pool.Free}");
-            }
-            _processContext.ObjectPool.DeAllocate();
-
-            _log.Debug("Performing garbage collection of all generations.");
-            GC.Collect();
         }
     }
 }

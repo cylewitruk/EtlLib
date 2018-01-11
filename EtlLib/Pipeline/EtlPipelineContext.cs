@@ -10,6 +10,7 @@ namespace EtlLib.Pipeline
     {
         public IDictionary<string, object> State { get; }
         public ILoggingAdapter LoggingAdapter { get; private set; }
+        public ObjectPoolContainer ObjectPool { get; private set; }
 
         internal IDictionary<INode, Exception> Errors { get; }
         internal void SetLoggingAdapter(ILoggingAdapter loggingAdapter) => LoggingAdapter = loggingAdapter;
@@ -19,6 +20,7 @@ namespace EtlLib.Pipeline
             State = new ConcurrentDictionary<string, object>();
             Errors = new ConcurrentDictionary<INode, Exception>();
             LoggingAdapter = loggingAdapter;
+            ObjectPool = new ObjectPoolContainer();
         }
     }
 }

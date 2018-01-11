@@ -13,6 +13,7 @@ namespace EtlLib.Pipeline
         private const string LoggerName = "EtlLib.EtlPipeline";
 
         private readonly EtlPipelineContext _context;
+        private readonly EtlPipelineSettings _settings;
         private readonly List<IExecutable> _steps;
         private readonly ILogger _log;
         private readonly ILoggingAdapter _loggingAdapter;
@@ -27,16 +28,45 @@ namespace EtlLib.Pipeline
 
             _log = _loggingAdapter.CreateLogger(LoggerName);
             _steps = new List<IExecutable>();
+
+            _settings = settings;
         }
 
         public PipelineResult Execute()
         {
             PrintHeader();
+
+            if (_settings.ObjectPoolRegistrations.Count > 0)
+            {
+                _log.Info("Initializing object pools...");
+                foreach (var pool in _settings.ObjectPoolRegistrations)
+                {
+                    _log.Info($" - ObjectPool<{pool.Type.Name}> (InitialSize={pool.InitialSize}, AutoGrow={pool.AutoGrow})");
+                    _context.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
+                }
+            }
+
             for (var i = 0; i < _steps.Count; i++)
             {
                 _log.Info($"Executing step #{i}: '{_steps[i].Name}'");
-                _steps[0].Execute();
+                _steps[i].Execute();
+
+                if (_steps[i] is IDisposable disposable)
+                {
+                    _log.Debug("Disposing of resources used by step.");
+                    disposable.Dispose();
+                }
+
+                _log.Debug("Performing garbage collection of all generations.");
+                GC.Collect();
             }
+
+            _log.Debug("Deallocating all object pools:");
+            foreach (var pool in _context.ObjectPool.Pools)
+            {
+                _log.Debug($" * ObjectPool<{pool.Type.Name}> => Referenced: {pool.Referenced}, Free: {pool.Free}");
+            }
+            _context.ObjectPool.DeAllocate();
 
             return null;
         }

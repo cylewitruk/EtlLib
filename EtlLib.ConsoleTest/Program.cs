@@ -4,7 +4,6 @@ using EtlLib.Data;
 using EtlLib.Logging.NLog;
 using EtlLib.Nodes.AmazonS3;
 using EtlLib.Nodes.CsvFiles;
-using EtlLib.Nodes.Impl;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
 
@@ -23,8 +22,7 @@ namespace EtlLib.ConsoleTest
                     cfg
                         .WithLoggingAdapter(loggingAdapter)
                         .Named("Test Process")
-                        .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!")
-                        .RegisterObjectPool<Row>(100000);
+                        .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!");
                 })
                 .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
                 .GenerateRowNumbers("_id")
@@ -53,19 +51,21 @@ namespace EtlLib.ConsoleTest
                     .WithBasicCredentials("***REMOVED***", "***REMOVED***")
                 );
 
-            builder.PrintGraph();
+            //builder.PrintGraph();
 
             var process = builder.Build();
 
-            var pipeline = EtlPipeline.Create(cfg =>
+            var pipelineResult = EtlPipeline.Create(cfg =>
                 {
                     cfg
                         .Named("Test ETL Process")
-                        .WithLoggingAdapter(loggingAdapter);
+                        .WithLoggingAdapter(loggingAdapter)
+                        .RegisterObjectPool<Row>(100000);
                 })
-                .Run(process);
+                .Run(process)
+                .Execute();
 
-            pipeline.Execute();
+
 
             Console.WriteLine("\nPress enter to exit...\n");
             Console.ReadLine();
