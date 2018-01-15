@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Configuration;
 using Amazon;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
 using EtlLib.Nodes.AmazonS3;
 using EtlLib.Nodes.CsvFiles;
+using EtlLib.Nodes.Redshift;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
 
@@ -63,6 +65,44 @@ namespace EtlLib.ConsoleTest
                         .RegisterObjectPool<Row>(100000);
                 })
                 .Run(process)
+                .Run(ctx => new ExecuteRedshiftCommandNode("Name", "connectionString", red =>
+                {
+                    red.Execute(cmd => cmd.Create
+                        .Table("staging_customers", tbl => tbl
+                            .IfNotExists()
+                            //.Like("the_other_table")
+                            .Temporary()
+                            .NoBackup()
+                            .WithColumns(cols =>
+                            {
+                                cols.Add("my_id", t => t.AsInt8())
+                                    .Identity(1, 1)
+                                    .Unique()
+                                    .DistributionKey()
+                                    .Nullable();
+
+                                cols.Add("amount", t => t.AsDecimal(8, 2));
+                            })
+                            .SortKey.Interleaved("my_id", "amount")
+                            .PrimaryKey("my_id", "amount")
+                            .UniqueKey("my_id", "amount")
+                        ));
+
+                    red.Execute(cmd => cmd.Copy
+                        .To("staging")
+                        .From.S3("bucketName", s3 => s3
+                            .Region("eu-west-1")
+                            //.UsingManifestFile("manifest.txt")
+                            .UsingObjectPrefix("somefile")
+                            .FileFormat.Csv(csv => csv
+                                .DelimitedBy(",")
+                                .QuoteAs("%"))
+                            .CompressedUsing.Gzip()
+                        )
+                        //.AuthorizedBy.IamRole("arn://12312323:role/somename")
+                        .AuthorizedBy.AccessKey("hello", "world")
+                    );
+                }))
                 .Execute();
 
 

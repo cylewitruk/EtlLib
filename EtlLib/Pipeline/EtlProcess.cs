@@ -12,7 +12,7 @@ using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.Pipeline
 {
-    public class EtlProcess : IExecutable, IDisposable
+    public class EtlProcess : IExecutableNode, IDisposable
     {
         private readonly EtlProcessContext _processContext;
         private readonly ILogger _log;

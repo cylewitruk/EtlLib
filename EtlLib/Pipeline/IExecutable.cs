@@ -1,6 +1,6 @@
 ﻿namespace EtlLib.Pipeline
 {
-    public interface IExecutable
+    public interface IExecutableNode
     {
         string Name { get; }
         void Execute();

@@ -1,5 +1,5 @@
 ﻿using System;
-using EtlLib.Logging;
+using System.Collections.Generic;
 using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.Pipeline
@@ -8,8 +8,11 @@ namespace EtlLib.Pipeline
     {
         PipelineResult Execute();
 
-        IEtlPipeline Run(Action<EtlProcessSettings> settings, Action<IEtlProcessBuilder> builder);
-        IEtlPipeline Run(IExecutable executable);
-        IEtlPipeline RunParallel(params IExecutable[] executables);
+        IEtlPipeline Run(Action<EtlPipelineContext, EtlProcessSettings> settings,
+            Action<EtlPipelineContext, IEtlProcessBuilder> builder);
+
+        IEtlPipeline Run(IExecutableNode executable);
+        IEtlPipeline Run(Func<EtlPipelineContext, IExecutableNode> ctx);
+        IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IExecutableNode>> ctx);
     }
 }

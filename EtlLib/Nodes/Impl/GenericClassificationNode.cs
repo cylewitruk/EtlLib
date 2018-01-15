@@ -121,10 +121,16 @@ namespace EtlLib.Nodes.Impl
             if (!(expression.Body is MethodCallExpression methodCallExpression))
                 return false;
 
-            var fieldName = ((MemberExpression) methodCallExpression.Arguments[0]).Member.Name;
-            var tmp = ((ConstantExpression) ((MemberExpression) methodCallExpression.Arguments[0]).Expression).Value;
-            _indexerKey = (TKey)tmp.GetType().GetField(fieldName).GetValue(tmp);
-            //_indexerKey = (TKey)((ConstantExpression)methodCallExpression.Arguments[0]).Value;
+            if (methodCallExpression.Arguments[0] is MemberExpression)
+            {
+                var fieldName = ((MemberExpression) methodCallExpression.Arguments[0]).Member.Name;
+                var tmp = ((ConstantExpression)((MemberExpression)methodCallExpression.Arguments[0]).Expression).Value;
+                _indexerKey = (TKey)tmp.GetType().GetField(fieldName).GetValue(tmp);
+            }
+            else if (methodCallExpression.Arguments[0] is ConstantExpression)
+            {
+                _indexerKey = (TKey) ((ConstantExpression) methodCallExpression.Arguments[0]).Value;
+            }
 
             ParameterExpression param = Expression.Parameter(typeof(T), "t");
             ParameterExpression keyExpr = Expression.Parameter(methodCallExpression.Arguments[0].Type);

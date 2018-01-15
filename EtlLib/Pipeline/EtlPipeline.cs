@@ -14,7 +14,7 @@ namespace EtlLib.Pipeline
 
         private readonly EtlPipelineContext _context;
         private readonly EtlPipelineSettings _settings;
-        private readonly List<IExecutable> _steps;
+        private readonly List<IExecutableNode> _steps;
         private readonly ILogger _log;
         private readonly ILoggingAdapter _loggingAdapter;
 
@@ -27,7 +27,7 @@ namespace EtlLib.Pipeline
             Name = settings.Name;
 
             _log = _loggingAdapter.CreateLogger(LoggerName);
-            _steps = new List<IExecutable>();
+            _steps = new List<IExecutableNode>();
 
             _settings = settings;
         }
@@ -84,7 +84,7 @@ namespace EtlLib.Pipeline
             _log.Info(new string('#', 80));
         }
 
-        public IEtlPipeline Run(Action<EtlProcessSettings> settings, Action<IEtlProcessBuilder> builder)
+        public IEtlPipeline Run(Action<EtlPipelineContext, EtlProcessSettings> settings, Action<EtlPipelineContext, IEtlProcessBuilder> builder)
         {
             var s = new EtlProcessSettings()
             {
@@ -93,20 +93,27 @@ namespace EtlLib.Pipeline
                 ContextInitializer = cfg => { }
             };
             
-            var b = EtlProcessBuilder.Create(processSettings => settings(s));
-            builder(b);
+            var b = EtlProcessBuilder.Create(processSettings => settings(_context, s));
+            builder(_context, b);
 
             return this;
         }
 
-        public IEtlPipeline Run(IExecutable executable)
+        public IEtlPipeline Run(IExecutableNode executable)
         {
             _steps.Add(executable);
             return this;
         }
 
-        public IEtlPipeline RunParallel(params IExecutable[] executables)
+        public IEtlPipeline Run(Func<EtlPipelineContext, IExecutableNode> ctx)
         {
+            _steps.Add(ctx(_context));
+            return this;
+        }
+
+        public IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IExecutableNode>> ctx)
+        {
+            var executables = ctx(_context).ToArray();
             _steps.Add(new ParallelExecutable($"Executing steps in parellel => [{string.Join(", ", executables.Select(x => x.Name))}]", executables));
             return this;
         }
@@ -123,15 +130,15 @@ namespace EtlLib.Pipeline
         }
     }
 
-    public class ParallelExecutable : IExecutable
+    public class ParallelExecutable : IExecutableNode
     {
-        private readonly List<IExecutable> _steps;
+        private readonly List<IExecutableNode> _steps;
 
         public string Name { get; }
 
-        public ParallelExecutable(string name, params IExecutable[] executables)
+        public ParallelExecutable(string name, params IExecutableNode[] executables)
         {
-            _steps = new List<IExecutable>(executables);
+            _steps = new List<IExecutableNode>(executables);
             Name = name;
         }
         

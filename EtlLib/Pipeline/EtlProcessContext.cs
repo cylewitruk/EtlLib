@@ -4,10 +4,10 @@ using EtlLib.Logging;
 
 namespace EtlLib.Pipeline
 {
-    public class EtlProcessContext<T>
-        where T : class, new()
+    public class EtlProcessContext<TState>
+        where TState : class, new()
     {
-        public T State { get; }
+        public TState State { get; }
         public IDictionary<string, object> StateDict { get; }
         public ILoggingAdapter LoggingAdapter { get; }
         public EtlPipelineContext PipelineContext { get; }
@@ -17,7 +17,7 @@ namespace EtlLib.Pipeline
         {
             StateDict = new ConcurrentDictionary<string, object>();
             LoggingAdapter = loggingAdapter;
-            State = new T();
+            State = new TState();
             PipelineContext = new EtlPipelineContext(loggingAdapter);
         }
     }

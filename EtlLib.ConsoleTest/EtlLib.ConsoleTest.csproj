@@ -102,6 +102,10 @@
       <Project>{3F674523-8B41-40E2-B5B7-F2F105F99F6D}</Project>
       <Name>EtlLib.Nodes.CsvFiles</Name>
     </ProjectReference>
+    <ProjectReference Include="..\EtlLib.Nodes.Redshift\EtlLib.Nodes.Redshift.csproj">
+      <Project>{5D007C8D-C6CD-4DC9-B7DC-706D605601AD}</Project>
+      <Name>EtlLib.Nodes.Redshift</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EtlLib\EtlLib.csproj">
       <Project>{2850690c-13a9-442b-a71c-5f2273730d8a}</Project>
       <Name>EtlLib</Name>
