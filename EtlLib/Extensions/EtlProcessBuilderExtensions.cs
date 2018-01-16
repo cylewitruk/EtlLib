@@ -28,6 +28,15 @@ namespace EtlLib
             return builder.Continue(ctx => new GenericMappingNode<TIn, TOut>(map));
         }
 
+        public static IOutputNodeBuilderContext<TOut> GenerateInput<TOut, TState>(
+            this IEtlProcessBuilder builder,
+            Func<GenericDataGenerationNode<TOut, TState>.IDataGeneratorHelper<TState>, bool> @while,
+            Func<int, GenericDataGenerationNode<TOut,TState>.IDataGeneratorHelper<TState>, TOut> generateFn)
+            where TOut : class, INodeOutput<TOut>, new()
+        {
+            return builder.Input(ctx => new GenericDataGenerationNode<TOut, TState>(@while, generateFn));
+        }
+
         public static IOutputNodeBuilderContext<Row> Classify(this IOutputNodeBuilderContext<Row> builder,
             string outputColumn, Action<GenericClassificationNode<Row, string, object>> cat)
         {

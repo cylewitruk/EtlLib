@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using CsvHelper;
 using EtlLib.Data;
 
@@ -10,11 +11,14 @@ namespace EtlLib.Nodes.CsvFiles
         private string _filePath;
         private bool _includeHeader;
         private int _writtenRowCount;
+        private Encoding _encoding;
 
         public CsvWriterNode(string filePath = null, string stateKey = null)
         {
             _filePath = filePath;
             _includeHeader = true;
+
+            _encoding = Encoding.UTF8;
 
             if (!string.IsNullOrWhiteSpace(stateKey))
                 WithFilePathFromStateKey(stateKey);
@@ -38,6 +42,12 @@ namespace EtlLib.Nodes.CsvFiles
             return this;
         }
 
+        public CsvWriterNode WithEncoding(Encoding encoding)
+        {
+            _encoding = encoding;
+            return this;
+        }
+
         public override void OnExecute()
         {
             var log = Context.LoggingAdapter.CreateLogger("EtlLib.Nodes.CsvWriterNode");
@@ -45,7 +55,7 @@ namespace EtlLib.Nodes.CsvFiles
             var columns = new List<string>();
 
             using (var file = File.OpenWrite(_filePath))
-            using (var sw = new StreamWriter(file))
+            using (var sw = new StreamWriter(file, _encoding))
             using (var writer = new CsvWriter(sw))
             {
                 foreach (var row in Input)
