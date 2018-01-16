@@ -26,7 +26,6 @@ namespace EtlLib.Pipeline.Builders
         private readonly EtlProcessSettings _settings;
 
         public Guid Id { get; }
-        private readonly ILoggingAdapter _loggingAdapter;
         internal ILogger Log { get; }
         internal EtlProcessContext ProcessContext { get; }
         public string Name { get; private set; }
@@ -45,7 +44,6 @@ namespace EtlLib.Pipeline.Builders
             NodeGraph = new Dictionary<Guid, InputOutputMap>();
             SubProcesses = new Dictionary<Guid, EtlProcessBuilder>();
             Log = config.LoggingAdapter.CreateLogger("EtlLib.EtlProcessBuilder");
-            _loggingAdapter = config.LoggingAdapter;
         }
 
         public static IEtlProcessBuilder Create(Action<EtlProcessSettings> cfg)
@@ -126,6 +124,10 @@ namespace EtlLib.Pipeline.Builders
         /// <returns>The InputOutputMap for the given node.</returns>
         public InputOutputMap GetIoMapForNode(INode node) => NodeGraph[node.Id];
 
+        /// <summary>
+        /// Builds a new EtlProcess.
+        /// </summary>
+        /// <returns></returns>
         public EtlProcess Build()
         {
             var process = new EtlProcess(_settings, ProcessContext);

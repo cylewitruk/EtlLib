@@ -23,15 +23,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nodes", "Nodes", "{56301CF0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{008631DB-0533-426A-8A32-3A4886AE34F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.Dapper", "EtlLib.Nodes.Dapper\EtlLib.Nodes.Dapper.csproj", "{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.Dapper", "EtlLib.Nodes.Dapper\EtlLib.Nodes.Dapper.csproj", "{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.PostgreSQL", "EtlLib.Nodes.PostgreSQL\EtlLib.Nodes.PostgreSQL.csproj", "{B8DB830D-3A67-4FEB-88D1-B55C5393559E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.PostgreSQL", "EtlLib.Nodes.PostgreSQL\EtlLib.Nodes.PostgreSQL.csproj", "{B8DB830D-3A67-4FEB-88D1-B55C5393559E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.Redshift", "EtlLib.Nodes.Redshift\EtlLib.Nodes.Redshift.csproj", "{5D007C8D-C6CD-4DC9-B7DC-706D605601AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.Redshift", "EtlLib.Nodes.Redshift\EtlLib.Nodes.Redshift.csproj", "{5D007C8D-C6CD-4DC9-B7DC-706D605601AD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E594D518-7A31-44C6-A522-E8123D05AF21}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.UnitTests", "EtlLib.UnitTests\EtlLib.UnitTests.csproj", "{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.UnitTests", "EtlLib.UnitTests\EtlLib.UnitTests.csproj", "{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.FileCompression", "EtlLib.Nodes.FileCompression\EtlLib.Nodes.FileCompression.csproj", "{774972FA-3CC8-451D-9A01-E3E1F5D69294}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +85,10 @@ Global
 		{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{774972FA-3CC8-451D-9A01-E3E1F5D69294}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{774972FA-3CC8-451D-9A01-E3E1F5D69294}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{774972FA-3CC8-451D-9A01-E3E1F5D69294}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{774972FA-3CC8-451D-9A01-E3E1F5D69294}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -99,6 +105,7 @@ Global
 		{B8DB830D-3A67-4FEB-88D1-B55C5393559E} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 		{5D007C8D-C6CD-4DC9-B7DC-706D605601AD} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 		{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0} = {E594D518-7A31-44C6-A522-E8123D05AF21}
+		{774972FA-3CC8-451D-9A01-E3E1F5D69294} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {35A58916-7182-4058-B44F-F19927D47BA6}
