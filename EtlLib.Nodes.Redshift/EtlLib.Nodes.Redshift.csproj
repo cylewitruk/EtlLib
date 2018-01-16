@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Npgsql" Version="3.2.6" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EtlLib.Nodes.PostgreSQL\EtlLib.Nodes.PostgreSQL.csproj" />
   </ItemGroup>
 

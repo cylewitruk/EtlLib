@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EtlLib.Nodes.Redshift.Builders;
 using EtlLib.Pipeline;
+using Npgsql;
 
 namespace EtlLib.Nodes.Redshift
 {
-    public class ExecuteRedshiftCommandNode : IExecutableNode
+    public class ExecuteRedshiftBatchNode : IExecutableNode
     {
         public string Name { get; }
 
         private readonly string _connectionString;
         private readonly List<string> _commands;
  
-        public ExecuteRedshiftCommandNode(string name, string connectionString, Action<RedshiftCommandBatchBuilder> red)
+        public ExecuteRedshiftBatchNode(string name, string connectionString, Action<RedshiftCommandBatchBuilder> red)
         {
             Name = name;
             _connectionString = connectionString;
@@ -33,7 +35,19 @@ namespace EtlLib.Nodes.Redshift
 
         public void Execute()
         {
-            throw new NotImplementedException();
+            using (var con = new NpgsqlConnection(_connectionString))
+            {
+                con.Open();
+                foreach (var redshiftCommand in _commands)
+                {
+                    using (var cmd = con.CreateCommand())
+                    {
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = redshiftCommand;
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
         }
     }
 }

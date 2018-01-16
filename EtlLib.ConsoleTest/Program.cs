@@ -65,7 +65,7 @@ namespace EtlLib.ConsoleTest
                         .RegisterObjectPool<Row>(100000);
                 })
                 .Run(process)
-                .Run(ctx => new ExecuteRedshiftCommandNode("Name", "connectionString", red =>
+                .Run(ctx => new ExecuteRedshiftBatchNode("Name", "connectionString", red =>
                 {
                     red.Execute(cmd => cmd.Create
                         .Table("staging_customers", tbl => tbl
