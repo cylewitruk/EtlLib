@@ -1,7 +1,7 @@
 ﻿using System;
 using EtlLib.Logging;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Pipeline.Operations
 {
     public class EtlProcessSettings
     {

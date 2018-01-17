@@ -2,6 +2,7 @@
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
+using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline.Builders
 {

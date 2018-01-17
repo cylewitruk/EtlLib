@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using EtlLib.Pipeline.Builders;
+using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline
 {
@@ -11,8 +12,8 @@ namespace EtlLib.Pipeline
         IEtlPipeline Run(Action<EtlPipelineContext, EtlProcessSettings> settings,
             Action<EtlPipelineContext, IEtlProcessBuilder> builder);
 
-        IEtlPipeline Run(IExecutableNode executable);
-        IEtlPipeline Run(Func<EtlPipelineContext, IExecutableNode> ctx);
-        IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IExecutableNode>> ctx);
+        IEtlPipeline Run(IEtlPipelineOperation executable);
+        IEtlPipeline Run(Func<EtlPipelineContext, IEtlPipelineOperation> ctx);
+        IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IEtlPipelineOperation>> ctx);
     }
 }

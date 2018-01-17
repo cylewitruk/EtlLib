@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using EtlLib.Logging;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Pipeline.Operations
 {
     public class EtlProcessContext<TState>
         where TState : class, new()

@@ -1,5 +1,5 @@
 ﻿using EtlLib.Logging;
-using EtlLib.Pipeline;
+using EtlLib.Pipeline.Operations;
 using Xunit.Abstractions;
 
 namespace EtlLib.UnitTests
@@ -8,7 +8,6 @@ namespace EtlLib.UnitTests
     {
         public static EtlProcessContext CreateProcessContext(ITestOutputHelper outputHelper = null)
         {
-
             ILoggingAdapter logAdapter = new NullLoggerAdapter();
             if (outputHelper != null)
                 logAdapter = new XUnitLoggingAdapter(outputHelper);

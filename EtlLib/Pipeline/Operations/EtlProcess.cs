@@ -8,11 +8,10 @@ using System.Threading.Tasks;
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
-using EtlLib.Pipeline.Builders;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Pipeline.Operations
 {
-    public class EtlProcess : IExecutableNode, IDisposable
+    public class EtlProcess : IEtlPipelineOperation, IDisposable
     {
         private readonly EtlProcessContext _processContext;
         private readonly ILogger _log;
@@ -22,37 +21,38 @@ namespace EtlLib.Pipeline
         private readonly EtlProcessSettings _settings;
         private readonly NodeStatistics _nodeStatistics;
         private readonly IErrorHandler _errorHandler;
-
-        public INodeWithOutput RootNode { get; }
+        private readonly ConcurrentBag<EtlPipelineOperationError> _errors;
+        
         public string Name { get; }
 
         public EtlProcess(EtlProcessSettings settings, EtlProcessContext context)
         {
             _settings = settings;
-
             Name = settings.Name;
-
+            _processContext = context;
+            _log = settings.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
             _ioAdapters = new List<IInputOutputAdapter>();
             _attachmentDeduplicationList = new List<string>();
             _nodes = new List<INode>();
             _nodeStatistics = new NodeStatistics();
+            _errors = new ConcurrentBag<EtlPipelineOperationError>();
             _errorHandler = new ErrorHandler()
             {
                 OnItemErrorFn = (n, e, i) =>
                 {
                     _log.Error(e.Message);
                     _nodeStatistics.IncrementErrors(n);
+                    _errors.Add(new EtlPipelineOperationError(this, n, e, i));
                 },
                 OnErrorFn = (n, e) =>
                 {
                     _log.Error(e.Message);
                     _nodeStatistics.IncrementErrors(n);
+                    _errors.Add(new EtlPipelineOperationError(this, n, e));
                 }
             };
             
-            _processContext = context;
-
-            _log = settings.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
+            
         }
 
         private void RegisterNode(INode node)
@@ -124,7 +124,7 @@ namespace EtlLib.Pipeline
             _attachmentDeduplicationList.Add($"{output.Id}:{input.Id}");
         }
 
-        public void Execute()
+        public IEtlPipelineOperationResult Execute()
         {
             _log.Info(new string('=', 80));
             _log.Info($"= Executing ETL Process '{Name}' (Started {DateTime.Now})");
@@ -148,8 +148,18 @@ namespace EtlLib.Pipeline
                     {
                         _log.Info($"Beginning execute task for node {node}.");
                         var sw = Stopwatch.StartNew();
-                        node.Execute();
+
+                        try
+                        {
+                            node.Execute();
+                        }
+                        catch (Exception e)
+                        {
+                            _errorHandler.RaiseError(node, e);
+                        }
+
                         sw.Stop();
+
                         _log.Info($"Execute task for node {node} has completed in {sw.Elapsed}.");
                         elapsedDict[node] = sw.Elapsed;
                     });
@@ -188,6 +198,9 @@ namespace EtlLib.Pipeline
             _log.Info($"= Total Writes: {_nodeStatistics.TotalWrites}");
             _log.Info($"= Total Errors: {_nodeStatistics.TotalErrors}");
             _log.Info(new string('=', 80));
+
+            return new EtlPipelineOperationResult(_errors.Count == 0)
+                .WithErrors(_errors);
         }
 
         public void Dispose()

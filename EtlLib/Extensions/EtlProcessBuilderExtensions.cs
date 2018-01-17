@@ -4,6 +4,7 @@ using EtlLib.Data;
 using EtlLib.Nodes.Impl;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
+using EtlLib.Pipeline.Operations;
 
 namespace EtlLib
 {

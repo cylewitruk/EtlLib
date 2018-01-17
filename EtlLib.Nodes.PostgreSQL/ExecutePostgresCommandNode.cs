@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.PostgreSQL
 {
-    public class ExecutePostgresCommandNode : IExecutableNode
+    public class ExecutePostgresCommandNode : IEtlPipelineOperation
     {
         private readonly string _connectionString;
         private readonly string _commandText;
@@ -34,7 +34,7 @@ namespace EtlLib.Nodes.PostgreSQL
             return this;
         }
 
-        public void Execute()
+        public IEtlPipelineOperationResult Execute()
         {
             using (var con = new Npgsql.NpgsqlConnection(_connectionString))
             {
@@ -59,6 +59,8 @@ namespace EtlLib.Nodes.PostgreSQL
                     cmd.ExecuteNonQuery();
                 }
             }
+
+            return new EtlPipelineOperationResult(true);
         }
     }
 }
