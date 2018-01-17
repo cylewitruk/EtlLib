@@ -9,8 +9,7 @@ namespace EtlLib.Pipeline
     {
         PipelineResult Execute();
 
-        IEtlPipeline Run(Action<EtlPipelineContext, EtlProcessSettings> settings,
-            Action<EtlPipelineContext, IEtlProcessBuilder> builder);
+        IEtlPipeline Run(Action<EtlPipelineContext, IEtlProcessBuilder> builder);
 
         IEtlPipeline Run(IEtlPipelineOperation executable);
         IEtlPipeline Run(Func<EtlPipelineContext, IEtlPipelineOperation> ctx);

@@ -7,7 +7,7 @@ using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline
 {
-    public class EtlPipeline : IEtlPipeline
+    public sealed class EtlPipeline : IEtlPipeline
     {
         private const string LoggerName = "EtlLib.EtlPipeline";
 
@@ -15,18 +15,18 @@ namespace EtlLib.Pipeline
         private readonly EtlPipelineSettings _settings;
         private readonly List<IEtlPipelineOperation> _steps;
         private readonly ILogger _log;
-        private readonly ILoggingAdapter _loggingAdapter;
+        private readonly Dictionary<IEtlPipelineOperation, IEtlPipelineOperationResult> _executionResults;
 
         public string Name { get; }
 
         private EtlPipeline(EtlPipelineSettings settings, EtlPipelineContext context)
         {
-            _loggingAdapter = settings.LoggingAdapter;
             _context = context;
             Name = settings.Name;
 
-            _log = _loggingAdapter.CreateLogger(LoggerName);
+            _log = context.GetLogger(LoggerName);
             _steps = new List<IEtlPipelineOperation>();
+            _executionResults = new Dictionary<IEtlPipelineOperation, IEtlPipelineOperationResult>();
 
             _settings = settings;
         }
@@ -40,7 +40,7 @@ namespace EtlLib.Pipeline
                 _log.Info("Initializing object pools...");
                 foreach (var pool in _settings.ObjectPoolRegistrations)
                 {
-                    _log.Info($" - ObjectPool<{pool.Type.Name}> (InitialSize={pool.InitialSize}, AutoGrow={pool.AutoGrow})");
+                    _log.Info($" * Creating pool for '{pool.Type.Name}' (InitialSize={pool.InitialSize}, AutoGrow={pool.AutoGrow})");
                     _context.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
                 }
             }
@@ -48,7 +48,8 @@ namespace EtlLib.Pipeline
             for (var i = 0; i < _steps.Count; i++)
             {
                 _log.Info($"Executing step #{i}: '{_steps[i].Name}'");
-                _steps[i].Execute();
+                var result = _steps[i].Execute();
+                _executionResults[_steps[i]] = result;
 
                 if (_steps[i] is IDisposable disposable)
                 {
@@ -83,16 +84,10 @@ namespace EtlLib.Pipeline
             _log.Info(new string('#', 80));
         }
 
-        public IEtlPipeline Run(Action<EtlPipelineContext, EtlProcessSettings> settings, Action<EtlPipelineContext, IEtlProcessBuilder> builder)
+        public IEtlPipeline Run(Action<EtlPipelineContext, IEtlProcessBuilder> builder)
         {
-            var s = new EtlProcessSettings()
-            {
-                LoggingAdapter = _loggingAdapter,
-                Name = $"Step {_steps.Count + 1}",
-                ContextInitializer = cfg => { }
-            };
             
-            var b = EtlProcessBuilder.Create(processSettings => settings(_context, s));
+            var b = EtlProcessBuilder.Create();
             builder(_context, b);
 
             return this;
@@ -100,20 +95,29 @@ namespace EtlLib.Pipeline
 
         public IEtlPipeline Run(IEtlPipelineOperation executable)
         {
-            _steps.Add(executable);
-            return this;
+            return RegisterOperation(executable);
         }
 
         public IEtlPipeline Run(Func<EtlPipelineContext, IEtlPipelineOperation> ctx)
         {
-            _steps.Add(ctx(_context));
-            return this;
+            return RegisterOperation(ctx(_context));
         }
 
         public IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IEtlPipelineOperation>> ctx)
         {
-            var executables = ctx(_context).ToArray();
-            _steps.Add(new ParallelOperation($"Executing steps in parellel => [{string.Join(", ", executables.Select(x => x.Name))}]", executables));
+            var operations = ctx(_context).ToArray();
+            var parellelOperation =
+                new ParallelOperation(
+                    $"Executing steps in parellel => [{string.Join(", ", operations.Select(x => x.Name))}]",
+                    operations);
+
+            return RegisterOperation(parellelOperation);
+        }
+
+        private IEtlPipeline RegisterOperation(IEtlPipelineOperation operation)
+        {
+            operation.SetContext(_context);
+            _steps.Add(operation);
             return this;
         }
 
@@ -122,7 +126,7 @@ namespace EtlLib.Pipeline
             var settings = new EtlPipelineSettings();
             cfg(settings);
 
-            var context = new EtlPipelineContext(settings.LoggingAdapter);
+            var context = new EtlPipelineContext();
             settings.ContextInitializer(context);
 
             return new EtlPipeline(settings, context);

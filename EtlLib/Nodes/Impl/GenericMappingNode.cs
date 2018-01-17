@@ -1,5 +1,6 @@
 ﻿using System;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
@@ -14,13 +15,13 @@ namespace EtlLib.Nodes.Impl
             _mapFn = mapFn;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             foreach (var item in Input)
             {
-                var newItem = Context.ObjectPool.Borrow<TOut>();
+                var newItem = context.ObjectPool.Borrow<TOut>();
                 Emit(_mapFn(item, newItem));
-                Context.ObjectPool.Return(item);
+                context.ObjectPool.Return(item);
             }
 
             Emitter.SignalEnd();

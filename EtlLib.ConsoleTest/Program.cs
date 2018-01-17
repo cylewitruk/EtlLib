@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using Amazon;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
@@ -17,15 +16,9 @@ namespace EtlLib.ConsoleTest
         private static void Main(string[] args)
         {
             var loggingAdapter = new NLogLoggingAdapter();
+            EtlLibConfig.LoggingAdapter = loggingAdapter;
 
-            var builder = EtlProcessBuilder
-                .Create(cfg =>
-                {
-                    cfg
-                        .WithLoggingAdapter(loggingAdapter)
-                        .Named("Test Process")
-                        .WithContextInitializer(ctx => ctx.StateDict["hello"] = "world!");
-                })
+            var builder = EtlProcessBuilder.Create()
                 .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
                 .GenerateRowNumbers("_id")
                 .Classify("income_segment", cat =>
@@ -61,10 +54,19 @@ namespace EtlLib.ConsoleTest
                 {
                     cfg
                         .Named("Test ETL Process")
-                        .WithLoggingAdapter(loggingAdapter)
-                        .RegisterObjectPool<Row>(100000);
+                        .RegisterObjectPool<Row>(100000)
+                        .WithContextInitializer(ctx =>
+                        {
+                            ctx.Config["s3_bucket_name"] = "pndw-dw";
+                            ctx.Config["s3_access_key"] = "***REMOVED***";
+                            ctx.Config["s3_secret_access_key"] = "***REMOVED***";
+                            ctx.Config["outfile"] = @"C:\Users\Cyle\Desktop\d_date.csv";
+                        });
                 })
-                .Run(process)
+                .Run(ctx => 
+                    new GenerateDateDimensionEtlProcess(ctx.Config["s3_bucket_name"], ctx.Config["s3_access_key"], 
+                        ctx.Config["s3_secret_access_key"], ctx.Config["outfile"]))
+                /*.Run(process)
                 .Run(ctx => new ExecuteRedshiftBatchNode("Name", "connectionString", red =>
                 {
                     red.Execute(cmd => cmd.Create
@@ -102,7 +104,7 @@ namespace EtlLib.ConsoleTest
                         //.AuthorizedBy.IamRole("arn://12312323:role/somename")
                         .AuthorizedBy.AccessKey("hello", "world")
                     );
-                }))
+                }))*/
                 .Execute();
 
 

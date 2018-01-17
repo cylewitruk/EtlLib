@@ -1,18 +1,12 @@
-﻿using EtlLib.Logging;
-using EtlLib.Pipeline.Operations;
-using Xunit.Abstractions;
+﻿using EtlLib.Pipeline;
 
 namespace EtlLib.UnitTests
 {
     public static class TestHelpers
     {
-        public static EtlProcessContext CreateProcessContext(ITestOutputHelper outputHelper = null)
+        public static EtlPipelineContext CreatePipelineContext()
         {
-            ILoggingAdapter logAdapter = new NullLoggerAdapter();
-            if (outputHelper != null)
-                logAdapter = new XUnitLoggingAdapter(outputHelper);
-
-            return new EtlProcessContext(logAdapter);
+            return new EtlPipelineContext();
         }
     }
 }

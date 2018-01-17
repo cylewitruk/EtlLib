@@ -2,6 +2,7 @@
 using System.Data;
 using Dapper;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Dapper
 {
@@ -57,7 +58,7 @@ namespace EtlLib.Nodes.Dapper
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             using (var con = _createConnection())
             using (var trx = con.BeginTransaction(_isolationLevel))

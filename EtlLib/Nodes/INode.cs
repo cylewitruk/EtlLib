@@ -2,23 +2,20 @@
 using System.Collections.Generic;
 using EtlLib.Data;
 using EtlLib.Pipeline;
-using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Nodes
 {
     public interface INode
     {
         Guid Id { get; }
-        EtlProcessContext Context { get; }
         INodeWaiter Waiter { get; }
         IErrorHandler ErrorHandler { get; }
 
         INode SetId(Guid id);
-        INode SetContext(EtlProcessContext context);
         INode SetWaiter(INodeWaiter waiter);
         INode SetErrorHandler(IErrorHandler errorHandler);
 
-        void Execute();
+        void Execute(EtlPipelineContext context);
     }
 
     public interface INodeWithInput : INode { }

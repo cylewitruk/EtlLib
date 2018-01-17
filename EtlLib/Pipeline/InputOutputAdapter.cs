@@ -5,7 +5,6 @@ using System.Threading;
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
-using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline
 {
@@ -27,8 +26,8 @@ namespace EtlLib.Pipeline
         private readonly ConcurrentDictionary<INode, BlockingCollection<T>> _queueMap;
         private readonly ConcurrentBag<INodeWithInput<T>> _inputs;
         private readonly INodeWithOutput<T> _output;
-        private readonly EtlProcessContext _context;
         private readonly NodeStatistics _nodeStatistics;
+        private readonly Func<T> _borrowFromObjectPoolFn;
         private ILogger _log;
         private volatile int _emittedItems;
 
@@ -37,13 +36,13 @@ namespace EtlLib.Pipeline
         public INodeWaiter Waiter { get; }
         public int EmitCount => _emittedItems;
 
-        public InputOutputAdapter(EtlProcessContext context, INodeWithOutput<T> output, NodeStatistics nodeStatistics)
+        public InputOutputAdapter(INodeWithOutput<T> output, NodeStatistics nodeStatistics, Func<T> borrowFromObjectPoolFn)
         {
             _queueMap = new ConcurrentDictionary<INode, BlockingCollection<T>>();
             _inputs = new ConcurrentBag<INodeWithInput<T>>();
             _output = output;
-            _log = new NullLogger();
-            _context = context;
+            _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.IOAdapter");
+            _borrowFromObjectPoolFn = borrowFromObjectPoolFn;
             _nodeStatistics = nodeStatistics;
 
             if (output is IBlockingNode)
@@ -122,7 +121,7 @@ namespace EtlLib.Pipeline
                 }
                 else
                 {
-                    var duplicatedItem = _context.ObjectPool.Borrow<T>();
+                    var duplicatedItem = _borrowFromObjectPoolFn();
                     item.CopyTo(duplicatedItem);
                     queue.Value.Add(duplicatedItem);
                 }

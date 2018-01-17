@@ -1,5 +1,6 @@
 ﻿using System;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
@@ -13,14 +14,14 @@ namespace EtlLib.Nodes.Impl
             _predicate = predicate;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             foreach (var item in Input)
             {
                 if (_predicate(item))
                     Emit(item);
                 else
-                    Context.ObjectPool.Return(item);
+                    context.ObjectPool.Return(item);
             }
 
             Emitter.SignalEnd();

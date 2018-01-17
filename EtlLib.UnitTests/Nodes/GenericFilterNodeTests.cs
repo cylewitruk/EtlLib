@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using EtlLib.Data;
 using EtlLib.Nodes.Impl;
-using EtlLib.Pipeline;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -32,9 +31,8 @@ namespace EtlLib.UnitTests.Nodes
 
             node.SetInput(input);
             node.SetEmitter(emitter);
-            node.SetContext(TestHelpers.CreateProcessContext(TestOutput));
 
-            node.Execute();
+            node.Execute(TestHelpers.CreatePipelineContext());
 
             emitter.EmittedItems.Should().HaveCount(3);
             emitter.EmittedItems[0]["number"].Should().Be(2);

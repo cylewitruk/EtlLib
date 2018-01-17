@@ -1,26 +1,18 @@
 ﻿using System;
 using EtlLib.Data;
 using EtlLib.Pipeline;
-using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Nodes
 {
     public abstract class AbstractNode : INode
     {
         public Guid Id { get; private set; }
-        public EtlProcessContext Context { get; private set; }
         public INodeWaiter Waiter { get; private set; }
         public IErrorHandler ErrorHandler { get; private set; }
 
         public INode SetId(Guid id)
         {
             Id = id;
-            return this;
-        }
-
-        public INode SetContext(EtlProcessContext context)
-        {
-            Context = context;
             return this;
         }
 
@@ -46,13 +38,13 @@ namespace EtlLib.Nodes
             ErrorHandler?.RaiseError(this, e, item);
         }
 
-        public void Execute()
+        public void Execute(EtlPipelineContext context)
         {
             Waiter?.Wait();
 
             try
             {
-                OnExecute();
+                OnExecute(context);
             }
             catch (Exception e)
             {
@@ -60,7 +52,7 @@ namespace EtlLib.Nodes
             }
         }
 
-        public abstract void OnExecute();
+        public abstract void OnExecute(EtlPipelineContext context);
 
         public override string ToString()
         {

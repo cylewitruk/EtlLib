@@ -3,12 +3,15 @@ using System.IO;
 using System.Text;
 using CsvHelper;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.CsvFiles
 {
     public class CsvWriterNode : AbstractInputOutputNode<Row, NodeOutputWithFilePath>
     {
         private string _filePath;
+        private string _stateKey;
+        private bool _isUsingStateKey;
         private bool _includeHeader;
         private int _writtenRowCount;
         private Encoding _encoding;
@@ -27,12 +30,14 @@ namespace EtlLib.Nodes.CsvFiles
         public CsvWriterNode WithSpecifiedFilePath(string filePath)
         {
             _filePath = filePath;
+            _isUsingStateKey = false;
             return this;
         }
 
         public CsvWriterNode WithFilePathFromStateKey(string key)
         {
-            _filePath = (string)Context.StateDict[key];
+            _stateKey = key;
+            _isUsingStateKey = true;
             return this;
         }
 
@@ -48,9 +53,12 @@ namespace EtlLib.Nodes.CsvFiles
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
-            var log = Context.LoggingAdapter.CreateLogger("EtlLib.Nodes.CsvWriterNode");
+            if (_isUsingStateKey)
+                _filePath = (string)context.State[_stateKey];
+
+            var log = context.GetLogger("EtlLib.Nodes.CsvWriterNode");
             var first = true;
             var columns = new List<string>();
 
@@ -77,7 +85,7 @@ namespace EtlLib.Nodes.CsvFiles
                     }
                     writer.NextRecord();
 
-                    Context.ObjectPool.Return(row);
+                    context.ObjectPool.Return(row);
                     _writtenRowCount++;
                 }
 

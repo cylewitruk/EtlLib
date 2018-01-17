@@ -7,16 +7,14 @@ using Npgsql;
 
 namespace EtlLib.Nodes.Redshift
 {
-    public class ExecuteRedshiftBatchNode : IEtlPipelineOperation
+    public class ExecuteRedshiftBatchNode : AbstractEtlPipelineOperation
     {
-        public string Name { get; }
-
         private readonly string _connectionString;
         private readonly List<string> _commands;
  
         public ExecuteRedshiftBatchNode(string name, string connectionString, Action<RedshiftCommandBatchBuilder> red)
         {
-            Name = name;
+            SetName(name);
             _connectionString = connectionString;
 
             var builder = new RedshiftCommandBatchBuilder();
@@ -33,7 +31,7 @@ namespace EtlLib.Nodes.Redshift
             }
         }
 
-        public IEtlPipelineOperationResult Execute()
+        public override IEtlPipelineOperationResult Execute()
         {
             using (var con = new NpgsqlConnection(_connectionString))
             {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
@@ -44,11 +45,11 @@ namespace EtlLib.Nodes.Impl
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             foreach (var item in Input)
             {
-                var newItem = Context.ObjectPool.Borrow<T>();
+                var newItem = context.ObjectPool.Borrow<T>();
                 try
                 {
                     item.CopyTo(newItem);
@@ -68,11 +69,11 @@ namespace EtlLib.Nodes.Impl
                         SetValue(newItem, _defaultClass);
 
                     Emit(newItem);
-                    Context.ObjectPool.Return(item);
+                    context.ObjectPool.Return(item);
                 }
                 catch (Exception e)
                 {
-                    Context.ObjectPool.Return(newItem);
+                    context.ObjectPool.Return(newItem);
                     RaiseError(e, item);
                 }
             }

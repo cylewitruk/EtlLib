@@ -25,7 +25,7 @@ namespace EtlLib.UnitTests.Nodes
             var emitter = new TestEmitter<Row>();
             node.SetEmitter(emitter);
 
-            node.Execute();
+            node.Execute(TestHelpers.CreatePipelineContext());
 
             emitter.EmittedItems.Should().HaveCount(5);
             var items = emitter.EmittedItems;
@@ -60,7 +60,7 @@ namespace EtlLib.UnitTests.Nodes
             var emitter = new TestEmitter<Row>();
             node.SetEmitter(emitter);
 
-            node.Execute();
+            node.Execute(TestHelpers.CreatePipelineContext());
 
             emitter.EmittedItems.Should().HaveCount(31);
             var items = emitter.EmittedItems;

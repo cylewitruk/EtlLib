@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.PostgreSQL
 {
@@ -33,7 +33,7 @@ namespace EtlLib.Nodes.PostgreSQL
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             using (var con = new Npgsql.NpgsqlConnection(_connectionString))
             {

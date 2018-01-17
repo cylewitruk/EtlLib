@@ -11,26 +11,19 @@ using EtlLib.Nodes;
 
 namespace EtlLib.Pipeline.Operations
 {
-    public class EtlProcess : IEtlPipelineOperation, IDisposable
+    public sealed class EtlProcess : AbstractEtlPipelineOperation, IDisposable
     {
-        private readonly EtlProcessContext _processContext;
         private readonly ILogger _log;
         private readonly List<IInputOutputAdapter> _ioAdapters;
         private readonly List<string> _attachmentDeduplicationList;
         private readonly List<INode> _nodes;
-        private readonly EtlProcessSettings _settings;
         private readonly NodeStatistics _nodeStatistics;
         private readonly IErrorHandler _errorHandler;
         private readonly ConcurrentBag<EtlPipelineOperationError> _errors;
-        
-        public string Name { get; }
 
-        public EtlProcess(EtlProcessSettings settings, EtlProcessContext context)
+        public EtlProcess(EtlPipelineContext context)
         {
-            _settings = settings;
-            Name = settings.Name;
-            _processContext = context;
-            _log = settings.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
+            _log = context.GetLogger("EtlLib.EtlProcess");
             _ioAdapters = new List<IInputOutputAdapter>();
             _attachmentDeduplicationList = new List<string>();
             _nodes = new List<INode>();
@@ -51,8 +44,6 @@ namespace EtlLib.Pipeline.Operations
                     _errors.Add(new EtlPipelineOperationError(this, n, e));
                 }
             };
-            
-            
         }
 
         private void RegisterNode(INode node)
@@ -61,7 +52,6 @@ namespace EtlLib.Pipeline.Operations
                 return;
 
             node
-                .SetContext(_processContext)
                 .SetErrorHandler(_errorHandler);
             _nodes.Add(node);
             _nodeStatistics.RegisterNode(node);
@@ -71,6 +61,12 @@ namespace EtlLib.Pipeline.Operations
         {
             foreach(var node in nodes)
                 RegisterNode(node);
+        }
+
+        private T BorrowObject<T>()
+            where T : class, IResettable, new()
+        {
+            return Context.ObjectPool.Borrow<T>();
         }
 
         public void AttachInputToOutput<T>(INodeWithOutput<T> output, INodeWithInput<T> input) 
@@ -88,8 +84,7 @@ namespace EtlLib.Pipeline.Operations
 
             if (!(_ioAdapters.SingleOrDefault(x => x.OutputNode.Equals(output)) is InputOutputAdapter<T> ioAdapter))
             {
-                ioAdapter = new InputOutputAdapter<T>(_processContext, output, _nodeStatistics)
-                    .WithLogger(_settings.LoggingAdapter.CreateLogger("EtlLib.IOAdapter"));
+                ioAdapter = new InputOutputAdapter<T>(output, _nodeStatistics, BorrowObject<T>);
 
                 output.SetEmitter(ioAdapter);
 
@@ -124,17 +119,11 @@ namespace EtlLib.Pipeline.Operations
             _attachmentDeduplicationList.Add($"{output.Id}:{input.Id}");
         }
 
-        public IEtlPipelineOperationResult Execute()
+        public override IEtlPipelineOperationResult Execute()
         {
             _log.Info(new string('=', 80));
             _log.Info($"= Executing ETL Process '{Name}' (Started {DateTime.Now})");
             _log.Info(new string('=', 80));
-
-            if (_settings.ContextInitializer != null)
-            {
-                _log.Info("Running context initializer.");
-                _settings.ContextInitializer(_processContext);
-            }
 
             var elapsedDict = new ConcurrentDictionary<INode, TimeSpan>();
 
@@ -151,7 +140,7 @@ namespace EtlLib.Pipeline.Operations
 
                         try
                         {
-                            node.Execute();
+                            node.Execute(Context);
                         }
                         catch (Exception e)
                         {

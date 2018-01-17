@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using EtlLib.Data;
 using EtlLib.Nodes.Impl;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
-using EtlLib.Pipeline.Operations;
 
 namespace EtlLib
 {
     public static class EtlProcessBuilderExtensions
     {
-        public static IOutputNodeBuilderContext<T> Transform<T>(this IOutputNodeBuilderContext<T> builder, Func<EtlProcessContext, T, T> transform)
+        public static IOutputNodeBuilderContext<T> Transform<T>(this IOutputNodeBuilderContext<T> builder, Func<EtlPipelineContext, T, T> transform)
             where T : class, INodeOutput<T>, new()
         {
             return builder.Continue(ctx => new GenericTransformationNode<T>((state, row) => transform(ctx, row)));
@@ -32,7 +30,7 @@ namespace EtlLib
         public static IOutputNodeBuilderContext<TOut> GenerateInput<TOut, TState>(
             this IEtlProcessBuilder builder,
             Func<GenericDataGenerationNode<TOut, TState>.IDataGeneratorHelper<TState>, bool> @while,
-            Func<int, GenericDataGenerationNode<TOut,TState>.IDataGeneratorHelper<TState>, TOut> generateFn)
+            Func<EtlPipelineContext, int, GenericDataGenerationNode<TOut,TState>.IDataGeneratorHelper<TState>, TOut> generateFn)
             where TOut : class, INodeOutput<TOut>, new()
         {
             return builder.Input(ctx => new GenericDataGenerationNode<TOut, TState>(@while, generateFn));

@@ -2,14 +2,28 @@
 {
     public class NullLoggerAdapter : ILoggingAdapter
     {
+        public static NullLoggerAdapter Instance;
+
+        static NullLoggerAdapter()
+        {
+            Instance = new NullLoggerAdapter();
+        }
+
         public ILogger CreateLogger(string name)
         {
-            return new NullLogger();
+            return NullLogger.Instance;
         }
     }
 
     public class NullLogger : ILogger
     {
+        public static NullLogger Instance;
+
+        static NullLogger()
+        {
+            Instance = new NullLogger();
+        }
+
         public void Trace(string s)
         {
         }

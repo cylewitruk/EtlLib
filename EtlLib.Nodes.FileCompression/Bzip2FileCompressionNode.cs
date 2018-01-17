@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 using ICSharpCode.SharpZipLib.BZip2;
 
 namespace EtlLib.Nodes.FileCompression
@@ -43,7 +44,7 @@ namespace EtlLib.Nodes.FileCompression
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             Parallel.ForEach(Input, new ParallelOptions {MaxDegreeOfParallelism = _degreeOfParallelism}, item =>
             {

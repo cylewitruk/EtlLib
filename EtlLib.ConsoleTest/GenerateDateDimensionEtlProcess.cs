@@ -3,14 +3,15 @@ using System.Globalization;
 using System.Text;
 using Amazon;
 using EtlLib.Data;
-using EtlLib.Logging;
 using EtlLib.Nodes.AmazonS3;
 using EtlLib.Nodes.CsvFiles;
+using EtlLib.Nodes.FileCompression;
 using EtlLib.Pipeline.Builders;
+using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.ConsoleTest
 {
-    public class GenerateDateDimensionEtlProcess
+    public class GenerateDateDimensionEtlProcess : AbstractEtlProcess
     {
         private static readonly Calendar Calendar;
 
@@ -19,83 +20,85 @@ namespace EtlLib.ConsoleTest
             Calendar = new GregorianCalendar();
         }
 
-        public static void Create(ILoggingAdapter loggingAdapter)
+        public GenerateDateDimensionEtlProcess(string s3BucketName, string s3AccessKeyId, string s3AccessKeySecret, string outputFilePath)
         {
             var startDate = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss",
                 CultureInfo.InvariantCulture);
             var endDate = DateTime.ParseExact("2025-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss",
                 CultureInfo.InvariantCulture);
 
-            var process = EtlProcessBuilder.Create(cfg =>
-                {
-                    cfg
-                        .WithLoggingAdapter(loggingAdapter)
-                        .Named("Generate Date Dimension");
-                })
-                .GenerateInput<Row, DateTime>(
-                    gen => gen.State <= endDate,
-                    (i, gen) =>
-                    {
-                        if (i == 1)
-                            gen.SetState(startDate);
+            Build(builder =>
+            {
+                builder
+                    .Named("Generate Date Dimension")
+                    .GenerateInput<Row, DateTime>(
+                        gen => gen.State <= endDate,
+                        (ctx, i, gen) =>
+                        {
+                            if (i == 1)
+                                gen.SetState(startDate);
 
-                        var row = CreateRowFromDateTime(gen.State);
-                        gen.SetState(gen.State.AddDays(1));
+                            var row = ctx.ObjectPool.Borrow<Row>();
+                            CreateRowFromDateTime(row, gen.State);
+                            gen.SetState(gen.State.AddDays(1));
 
-                        return row;
-                    }
-                )
-                .Continue(ctx => new CsvWriterNode((string) ctx.StateDict["d_date_csv.csv"])
-                    .IncludeHeader()
-                    .WithEncoding(Encoding.UTF8))
-                .Continue(ctx => new AmazonS3WriterNode(***REMOVED***, (string) ctx.StateDict["s3_bucket_name"])
-                    .WithBasicCredentials((string) ctx.StateDict["s3_access_key_id"],
-                        (string) ctx.StateDict["s3_access_key_secret"])
-                );
+                            return row;
+                        }
+                    )
+                    .Continue(ctx => new CsvWriterNode(outputFilePath)
+                        .IncludeHeader()
+                        .WithEncoding(Encoding.UTF8))
+                    .BZip2Files(cfg => cfg
+                        .CompressionLevel(9)
+                        .Parallelize(2)
+                        .FileSuffix(".bzip2"));
+                //.Continue(ctx => new AmazonS3WriterNode(***REMOVED***, _s3BucketName)
+                //    .WithBasicCredentials(_s3AccessKeyId, _s3AccessKeySecret)
+                //);
+            });
         }
 
-        public static Row CreateRowFromDateTime(DateTime date)
+        public static void CreateRowFromDateTime(Row row, DateTime date)
         {
             var isoWeekOfYear = CalculateIso8601WeekOfYear(date);
             var weekOfYear = CalculateWeekOfYear(isoWeekOfYear);
             var quarter = new Quarter(date);
-
-            var row = new Row
-            {
-                ["date"] = date,
-                ["epoch"] = (long) date.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
-                ["d_date_key"] = int.Parse(date.ToString("yyyyMMdd", CultureInfo.InvariantCulture)),
-                ["day_suffix"] = date.ToString("ddd", CultureInfo.InvariantCulture),
-                ["day_name"] = date.ToString("dddd", CultureInfo.InvariantCulture),
-                ["day_of_week"] = CalculateDayOfWeek(),
-                ["day_of_month"] = int.Parse(date.ToString("dd", CultureInfo.InvariantCulture)),
-                ["week_of_year"] = isoWeekOfYear,
-                ["week_of_year_iso"] = $"{weekOfYear}-W{isoWeekOfYear}",
-                ["week_year"] = weekOfYear,
-                ["month"] = date.Month,
-                ["year"] = date.Year,
-                ["month_name"] = date.ToString("MMMM", CultureInfo.InvariantCulture),
-                ["month_name_short"] = date.ToString("MMM", CultureInfo.InvariantCulture),
-                ["week_of_month"] = CalculateActualWeekOfYear(date) - CalculateActualWeekOfYear(date.AddDays(1 - date.Day)) + 1,
-                ["is_weekend"] = IsWeekend() ? 1 : 0,
-                ["day_of_year"] = date.DayOfYear,
-                ["quarter"] = quarter.QuarterNumber,
-                ["quarter_name"] = quarter.QuarterName,
-                ["quarter_name_short"] = quarter.QuarterNameShort,
-                ["day_of_quarter"] = quarter.DayOfQuarter,
-                ["fist_day_of_quarter"] = quarter.StartDate.ToString("yyyy-MM-dd"),
-                ["last_day_of_quarter"] = quarter.EndDate.ToString("yyyy-MM-dd"),
-                ["first_day_of_week"] = date.AddDays(CalculateDayOfWeek() - 1).ToString("yyyy-MM-dd"),
-                ["last_day_of_week"] = date.AddDays(7 - CalculateDayOfWeek()).ToString("yyyy-MM-dd"),
-                ["first_day_of_month"] = new DateTime(date.Year, date.Month, 1).ToString("yyyy-MM-dd"),
-                ["last_day_of_month"] = new DateTime(date.Year, date.Month, Calendar.GetDaysInMonth(date.Year, date.Month)).ToString("yyyy-MM-dd"),
-                ["first_day_of_year"] = new DateTime(date.Year, 1, 1).ToString("yyyy-MM-dd"),
-                ["last_day_of_year"] = new DateTime(date.Year, 12, Calendar.GetDaysInMonth(date.Year, 12)).ToString("yyyy-MM-dd"),
-                ["yyyymm"] = date.ToString("yyyyMM", CultureInfo.InvariantCulture),
-                ["yyyymmdd"] = date.ToString("yyyyMMdd", CultureInfo.InvariantCulture)
-            };
-
-            return row;
+            
+            row["date"] = date;
+            row["epoch"] = (long) date.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            row["d_date_key"] = int.Parse(date.ToString("yyyyMMdd"));
+            row["day_suffix"] = date.ToString("ddd", CultureInfo.InvariantCulture);
+            row["day_name"] = date.ToString("dddd", CultureInfo.InvariantCulture);
+            row["day_of_week"] = CalculateDayOfWeek();
+            row["day_of_month"] = int.Parse(date.ToString("dd", CultureInfo.InvariantCulture));
+            row["week_of_year"] = isoWeekOfYear;
+            row["week_of_year_iso"] = $"{weekOfYear}-W{isoWeekOfYear}";
+            row["week_year"] = weekOfYear;
+            row["month"] = date.Month;
+            row["year"] = date.Year;
+            row["month_name"] = date.ToString("MMMM", CultureInfo.InvariantCulture);
+            row["month_name_short"] = date.ToString("MMM", CultureInfo.InvariantCulture);
+            row["week_of_month"] = CalculateActualWeekOfYear(date) -
+                                   CalculateActualWeekOfYear(date.AddDays(1 - date.Day)) + 1;
+            row["is_weekend"] = IsWeekend() ? 1 : 0;
+            row["day_of_year"] = date.DayOfYear;
+            row["quarter"] = quarter.QuarterNumber;
+            row["quarter_name"] = quarter.QuarterName;
+            row["quarter_name_short"] = quarter.QuarterNameShort;
+            row["day_of_quarter"] = quarter.DayOfQuarter;
+            row["fist_day_of_quarter"] = quarter.StartDate.ToString("yyyy-MM-dd");
+            row["last_day_of_quarter"] = quarter.EndDate.ToString("yyyy-MM-dd");
+            row["first_day_of_week"] = date.AddDays(-CalculateDayOfWeek() - 1).ToString("yyyy-MM-dd");
+            row["last_day_of_week"] = date.AddDays(7 - CalculateDayOfWeek()).ToString("yyyy-MM-dd");
+            row["first_day_of_month"] = new DateTime(date.Year, date.Month, 1).ToString("yyyy-MM-dd");
+            row["last_day_of_month"] =
+                new DateTime(date.Year, date.Month, Calendar.GetDaysInMonth(date.Year, date.Month)).ToString(
+                    "yyyy-MM-dd");
+            row["first_day_of_year"] = new DateTime(date.Year, 1, 1).ToString("yyyy-MM-dd");
+            row["last_day_of_year"] =
+                new DateTime(date.Year, 12, Calendar.GetDaysInMonth(date.Year, 12)).ToString("yyyy-MM-dd");
+            row["yyyymm"] = date.ToString("yyyyMM");
+            row["yyyymmdd"] = date.ToString("yyyyMMdd");
 
             int CalculateDayOfWeek()
             {

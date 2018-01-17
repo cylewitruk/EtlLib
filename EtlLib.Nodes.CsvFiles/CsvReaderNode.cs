@@ -1,36 +1,22 @@
 ﻿using System.IO;
 using CsvHelper;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.CsvFiles
 {
     public class CsvReaderNode : AbstractOutputNode<Row>
     {
         private readonly bool _hasHeader;
-        private string _filePath;
+        private readonly string _filePath;
 
-        public CsvReaderNode(bool hasHeader = true, string filePath = null, string stateKey = null)
+        public CsvReaderNode(string filePath, bool hasHeaderRow = true)
         {
             _filePath = filePath;
-            if (!string.IsNullOrWhiteSpace(stateKey))
-                WithFilePathFromStateKey(stateKey);
-
-            _hasHeader = hasHeader;
+            _hasHeader = hasHeaderRow;
         }
 
-        public CsvReaderNode WithSpecifiedFilePath(string filePath)
-        {
-            _filePath = filePath;
-            return this;
-        }
-
-        public CsvReaderNode WithFilePathFromStateKey(string key)
-        {
-            _filePath = (string) Context.StateDict[key];
-            return this;
-        }
-
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             using (var file = File.OpenText(_filePath))
             using (var reader = new CsvReader(file))
@@ -42,7 +28,7 @@ namespace EtlLib.Nodes.CsvFiles
 
                 while (reader.Read())
                 {
-                    var row = Context.ObjectPool.Borrow<Row>();
+                    var row = context.ObjectPool.Borrow<Row>();
                     row.Load(reader.Context.HeaderRecord, reader.Context.Record);
                     Emit(row);
                     //Emit(Row.FromArray(reader.Context.HeaderRecord, reader.Context.Record));

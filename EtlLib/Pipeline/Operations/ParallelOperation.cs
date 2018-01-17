@@ -4,19 +4,17 @@ using System.Threading.Tasks;
 
 namespace EtlLib.Pipeline.Operations
 {
-    public class ParallelOperation : IEtlPipelineOperation
+    public class ParallelOperation : AbstractEtlPipelineOperation
     {
         private readonly List<IEtlPipelineOperation> _steps;
-
-        public string Name { get; }
 
         public ParallelOperation(string name, params IEtlPipelineOperation[] executables)
         {
             _steps = new List<IEtlPipelineOperation>(executables);
-            Name = name;
+            SetName(name);
         }
         
-        public IEtlPipelineOperationResult Execute()
+        public override IEtlPipelineOperationResult Execute()
         {
             var tasks = new ConcurrentBag<Task>();
             var errors = new ConcurrentBag<EtlPipelineOperationError>();

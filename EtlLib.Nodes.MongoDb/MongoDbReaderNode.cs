@@ -1,5 +1,6 @@
 ﻿using System;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 using MongoDB.Driver;
 
 namespace EtlLib.Nodes.MongoDb
@@ -30,7 +31,7 @@ namespace EtlLib.Nodes.MongoDb
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             var client = MongoStatic.GetClient(_connectionString);
             var database = client.GetDatabase(_databaseName);

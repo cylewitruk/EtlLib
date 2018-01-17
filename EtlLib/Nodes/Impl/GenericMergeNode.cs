@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
@@ -21,7 +22,7 @@ namespace EtlLib.Nodes.Impl
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             using (var input1Enumerator = Input.GetEnumerator())
             using (var input2Enumerator = Input2.GetEnumerator())

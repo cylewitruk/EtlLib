@@ -4,6 +4,7 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.AmazonS3
 {
@@ -68,7 +69,7 @@ namespace EtlLib.Nodes.AmazonS3
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             using (var client = new AmazonS3Client(_awsCredentials, _awsRegionEndpoint))
             {

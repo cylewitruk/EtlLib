@@ -13,7 +13,9 @@ namespace EtlLib.Pipeline.Builders
         Guid Id { get; }
         string Name { get; }
 
-        IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlProcessContext, INodeWithOutput<TOut>> ctx)
+        IEtlProcessBuilder Named(string name);
+
+        IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlPipelineContext, INodeWithOutput<TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new();
     }
 
@@ -23,12 +25,9 @@ namespace EtlLib.Pipeline.Builders
     /// </summary>
     public class EtlProcessBuilder : IEtlProcessBuilder
     {
-        //private readonly EtlPipelineContext _pipelineContext;
-        private readonly EtlProcessSettings _settings;
-
         public Guid Id { get; }
         internal ILogger Log { get; }
-        internal EtlProcessContext ProcessContext { get; }
+        internal EtlPipelineContext Context { get; }
         public string Name { get; private set; }
 
         internal Dictionary<Guid, InputOutputMap> NodeGraph { get; }
@@ -36,35 +35,33 @@ namespace EtlLib.Pipeline.Builders
         internal INode FirstNode { get; private set; }
         internal INode LastNode { get; private set; }
 
-        private EtlProcessBuilder(EtlProcessSettings config)
+        private EtlProcessBuilder()
         {
-            _settings = config;
             Id = Guid.NewGuid();
-            Name = config.Name ?? Id.ToString();
-            ProcessContext = new EtlProcessContext(config.LoggingAdapter);
+            Name = "Unnamed (" + Id + ")";
+            Context = new EtlPipelineContext();
             NodeGraph = new Dictionary<Guid, InputOutputMap>();
             SubProcesses = new Dictionary<Guid, EtlProcessBuilder>();
-            Log = config.LoggingAdapter.CreateLogger("EtlLib.EtlProcessBuilder");
+            Log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.EtlProcessBuilder");
         }
 
-        public static IEtlProcessBuilder Create(Action<EtlProcessSettings> cfg)
+        public static IEtlProcessBuilder Create()
         {
-            var config = new EtlProcessSettings
-            {
-                LoggingAdapter = new NullLoggerAdapter()
-            };
-
-            cfg(config);
-
-            var builder = new EtlProcessBuilder(config);
+            var builder = new EtlProcessBuilder();
             builder.Log.Debug($"Created new EtlProcessBuilder '{builder.Name}'");
             return builder;
         }
 
-        public IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlProcessContext, INodeWithOutput<TOut>> ctx) 
+        public IEtlProcessBuilder Named(string name)
+        {
+            Name = name;
+            return this;
+        }
+
+        public IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlPipelineContext, INodeWithOutput<TOut>> ctx) 
             where TOut : class, INodeOutput<TOut>, new()
         {
-            var node = ctx(ProcessContext);
+            var node = ctx(Context);
             FirstNode = node;
 
             RegisterNode(node, (m, last) =>
@@ -104,7 +101,7 @@ namespace EtlLib.Pipeline.Builders
         /// <returns>The new EtlProcessBuilder representing the subprocess.</returns>
         internal EtlProcessBuilder RegisterSubProcess(INode attachTo, string name = null)
         {
-            var builder = new EtlProcessBuilder(_settings)
+            var builder = new EtlProcessBuilder()
             {
                 FirstNode = attachTo,
                 LastNode = attachTo,
@@ -131,7 +128,8 @@ namespace EtlLib.Pipeline.Builders
         /// <returns></returns>
         public EtlProcess Build()
         {
-            var process = new EtlProcess(_settings, ProcessContext);
+            var process = new EtlProcess(Context);
+            process.SetName(Name);
 
             var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
 

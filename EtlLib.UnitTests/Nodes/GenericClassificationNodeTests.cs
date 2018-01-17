@@ -35,9 +35,8 @@ namespace EtlLib.UnitTests.Nodes
 
             node.SetInput(input);
             node.SetEmitter(emitter);
-            node.SetContext(TestHelpers.CreateProcessContext(TestOutput));
 
-            node.Execute();
+            node.Execute(TestHelpers.CreatePipelineContext());
 
             emitter.EmittedItems.Should().HaveCount(6);
             emitter.EmittedItems[0]["class"].Should().Be("NOT_MOD_2_OR_3");

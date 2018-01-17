@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.SqlServer
 {
@@ -33,7 +34,7 @@ namespace EtlLib.Nodes.SqlServer
             return this;
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             using (var con = new SqlConnection(_connectionString))
             {

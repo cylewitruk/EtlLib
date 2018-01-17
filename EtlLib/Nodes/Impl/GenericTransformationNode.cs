@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EtlLib.Data;
+using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
@@ -17,7 +18,7 @@ namespace EtlLib.Nodes.Impl
             _stateDictionary = new ConcurrentDictionary<string, object>();
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             foreach (var item in Input)
             {
@@ -41,7 +42,7 @@ namespace EtlLib.Nodes.Impl
             _state = new TState();
         }
 
-        public override void OnExecute()
+        public override void OnExecute(EtlPipelineContext context)
         {
             foreach (var item in Input)
             {
