@@ -13,9 +13,9 @@ namespace EtlLib.Pipeline
 
         private readonly EtlPipelineContext _context;
         private readonly EtlPipelineSettings _settings;
-        private readonly List<IEtlPipelineOperation> _steps;
+        private readonly List<IEtlOperation> _steps;
         private readonly ILogger _log;
-        private readonly Dictionary<IEtlPipelineOperation, IEtlPipelineOperationResult> _executionResults;
+        private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
         public string Name { get; }
 
@@ -25,13 +25,13 @@ namespace EtlLib.Pipeline
             Name = settings.Name;
 
             _log = context.GetLogger(LoggerName);
-            _steps = new List<IEtlPipelineOperation>();
-            _executionResults = new Dictionary<IEtlPipelineOperation, IEtlPipelineOperationResult>();
+            _steps = new List<IEtlOperation>();
+            _executionResults = new Dictionary<IEtlOperation, IEtlOperationResult>();
 
             _settings = settings;
         }
 
-        public PipelineResult Execute()
+        public EtlPipelineResult Execute()
         {
             PrintHeader();
 
@@ -93,17 +93,23 @@ namespace EtlLib.Pipeline
             return this;
         }
 
-        public IEtlPipeline Run(IEtlPipelineOperation executable)
+        public IEtlPipeline Run(IEtlOperation executable)
         {
             return RegisterOperation(executable);
         }
 
-        public IEtlPipeline Run(Func<EtlPipelineContext, IEtlPipelineOperation> ctx)
+        public IEtlPipeline Run(Func<EtlPipelineContext, IEtlOperation> ctx)
         {
             return RegisterOperation(ctx(_context));
         }
 
-        public IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IEtlPipelineOperation>> ctx)
+        /*public IEtlPipeline Run<TOut>(EtlProcess<TOut> process, Action<EtlPipelineContext, IEnumerableEtlPipelineOperationResult<TOut>> result) 
+            where TOut : class, INodeOutput<TOut>, new()
+        {
+
+        }*/
+
+        public IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IEtlOperation>> ctx)
         {
             var operations = ctx(_context).ToArray();
             var parellelOperation =
@@ -114,7 +120,7 @@ namespace EtlLib.Pipeline
             return RegisterOperation(parellelOperation);
         }
 
-        private IEtlPipeline RegisterOperation(IEtlPipelineOperation operation)
+        private IEtlPipeline RegisterOperation(IEtlOperation operation)
         {
             operation.SetContext(_context);
             _steps.Add(operation);

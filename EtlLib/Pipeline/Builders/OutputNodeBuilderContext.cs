@@ -2,6 +2,7 @@
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
+using EtlLib.Nodes.Impl;
 using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline.Builders
@@ -93,14 +94,23 @@ namespace EtlLib.Pipeline.Builders
 
             _parentBuilder.RegisterNode(node, (current, last) =>
             {
-                current.AddSourceNode((INodeWithOutput)last.ThisNode);
+                current.AddSourceNode((INodeWithOutput) last.ThisNode);
                 last.AddTargetNode(node);
 
-                _log.Debug($"'{_parentBuilder.Name}' registered new continue {node}");
+                _log.Debug($"'{_parentBuilder.Name}' registered new completion with result {node}");
                 _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {node}");
             });
 
-            return new EtlProcessCompletedWithResultBuilderContext<TOut>(_parentBuilder);
+            var resultCollectionNode = new GenericResultCollectionNode<TOut>();
+            _parentBuilder.RegisterNode(resultCollectionNode, (current, last) =>
+                {
+                    current.AddSourceNode((INodeWithOutput) last.ThisNode);
+                    last.AddTargetNode(resultCollectionNode);
+
+                    _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {resultCollectionNode}");
+                });
+
+            return new EtlProcessCompletedWithResultBuilderContext<TOut>(_parentBuilder, resultCollectionNode.Result);
         }
     }
 }

@@ -128,7 +128,7 @@ namespace EtlLib.Pipeline.Builders
         /// <returns></returns>
         public EtlProcess Build()
         {
-            var process = new EtlProcess(Context);
+            var process = new EtlProcess();
             process.SetName(Name);
 
             var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
@@ -142,6 +142,36 @@ namespace EtlLib.Pipeline.Builders
 
                 var nodeMap = GetIoMapForNode(node);
                 
+                var outputType = node.GetType().GetInterface(typeof(INodeWithOutput<>).FullName).GenericTypeArguments[0];
+                var invocable = method.MakeGenericMethod(outputType);
+
+                foreach (var target in nodeMap.TargetNodes)
+                {
+                    invocable.Invoke(process, new object[] { node, target });
+                    AttachToTargets(target);
+                }
+            }
+
+            return process;
+        }
+
+        public EtlProcess<TOut> Build<TOut>() 
+            where TOut : class, INodeOutput<TOut>, new()
+        {
+            var process = new EtlProcess<TOut>();
+            process.SetName(Name);
+
+            var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
+
+            AttachToTargets(FirstNode);
+
+            void AttachToTargets(INode node)
+            {
+                if (!(node is INodeWithOutput))
+                    return;
+
+                var nodeMap = GetIoMapForNode(node);
+
                 var outputType = node.GetType().GetInterface(typeof(INodeWithOutput<>).FullName).GenericTypeArguments[0];
                 var invocable = method.MakeGenericMethod(outputType);
 

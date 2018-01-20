@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EtlLib.Data;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Support
 {
     public class ObjectPoolContainer
     {

@@ -51,10 +51,10 @@ namespace EtlLib.ConsoleTest
                     .BZip2Files(cfg => cfg
                         .CompressionLevel(9)
                         .Parallelize(2)
-                        .FileSuffix(".bzip2"));
-                //.Continue(ctx => new AmazonS3WriterNode(***REMOVED***, _s3BucketName)
-                //    .WithBasicCredentials(_s3AccessKeyId, _s3AccessKeySecret)
-                //);
+                        .FileSuffix(".bzip2"))
+                    .Continue(ctx => new AmazonS3WriterNode(***REMOVED***, s3BucketName)
+                        .WithBasicCredentials(s3AccessKeyId, s3AccessKeySecret)
+                    );
             });
         }
 

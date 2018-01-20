@@ -3,7 +3,7 @@ using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.Pipeline.Operations
 {
-    public abstract class AbstractEtlProcess : AbstractEtlPipelineOperation
+    public abstract class AbstractEtlProcess : AbstractEtlOperationWithNoResult
     {
         private EtlProcess _etlProcess;
 
@@ -16,7 +16,7 @@ namespace EtlLib.Pipeline.Operations
             SetName(_etlProcess.Name);
         }
 
-        public override IEtlPipelineOperationResult Execute()
+        public override IEtlOperationResult Execute()
         {
             return _etlProcess.Execute();
         }

@@ -17,9 +17,10 @@ namespace EtlLib.ConsoleTest
         {
             var loggingAdapter = new NLogLoggingAdapter();
             EtlLibConfig.LoggingAdapter = loggingAdapter;
+            EtlLibConfig.EnableDebug = true;
 
             var builder = EtlProcessBuilder.Create()
-                .Input(ctx => new CsvReaderNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
+                .Input(ctx => new CsvReaderNode(@"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
                 .GenerateRowNumbers("_id")
                 .Classify("income_segment", cat =>
                 {
@@ -42,7 +43,7 @@ namespace EtlLib.ConsoleTest
                     return newRow;
                 })
                 .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv"))
-                .Complete(ctx => new AmazonS3WriterNode(***REMOVED***, "***REMOVED***")
+                .CompleteWithResult(ctx => new AmazonS3WriterNode(***REMOVED***, "***REMOVED***")
                     .WithBasicCredentials("***REMOVED***", "***REMOVED***")
                 );
 
@@ -57,22 +58,20 @@ namespace EtlLib.ConsoleTest
                         .RegisterObjectPool<Row>(100000)
                         .WithContextInitializer(ctx =>
                         {
-                            ctx.Config["s3_bucket_name"] = "pndw-dw";
+                            ctx.Config["s3_bucket_name"] = "***REMOVED***";
                             ctx.Config["s3_access_key"] = "***REMOVED***";
                             ctx.Config["s3_secret_access_key"] = "***REMOVED***";
-                            ctx.Config["outfile"] = @"C:\Users\Cyle\Desktop\d_date.csv";
+                            ctx.Config["outfile"] = @"C:\Users\Cyle\Desktop\cyle_d_date.csv";
                         });
                 })
-                .Run(ctx => 
-                    new GenerateDateDimensionEtlProcess(ctx.Config["s3_bucket_name"], ctx.Config["s3_access_key"], 
-                        ctx.Config["s3_secret_access_key"], ctx.Config["outfile"]))
-                /*.Run(process)
-                .Run(ctx => new ExecuteRedshiftBatchNode("Name", "connectionString", red =>
+                .Run(process)
+                /*.Run(ctx => new GenerateDateDimensionEtlProcess(
+                    ctx.Config["s3_bucket_name"], ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"], ctx.Config["outfile"]))
+                .Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>
                 {
-                    red.Execute(cmd => cmd.Create
+                    /*red.Execute(cmd => cmd.Create
                         .Table("staging_customers", tbl => tbl
                             .IfNotExists()
-                            //.Like("the_other_table")
                             .Temporary()
                             .NoBackup()
                             .WithColumns(cols =>
@@ -91,18 +90,15 @@ namespace EtlLib.ConsoleTest
                         ));
 
                     red.Execute(cmd => cmd.Copy
-                        .To("staging")
+                        .To("stage.doesntexist")
                         .From.S3("bucketName", s3 => s3
-                            .Region("eu-west-1")
-                            //.UsingManifestFile("manifest.txt")
-                            .UsingObjectPrefix("somefile")
+                            .UsingObjectPrefix("cyle_d_date.csv.bzip2")
                             .FileFormat.Csv(csv => csv
                                 .DelimitedBy(",")
                                 .QuoteAs("%"))
-                            .CompressedUsing.Gzip()
+                            .CompressedUsing.Bzip2()
                         )
-                        //.AuthorizedBy.IamRole("arn://12312323:role/somename")
-                        .AuthorizedBy.AccessKey("hello", "world")
+                        .AuthorizedBy.AccessKey(ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"])
                     );
                 }))*/
                 .Execute();

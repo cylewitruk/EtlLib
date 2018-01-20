@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Support
 {
     public class ObjectPoolSettings
     {

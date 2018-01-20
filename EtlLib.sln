@@ -21,7 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{A0A891E0-D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nodes", "Nodes", "{56301CF0-0EC6-415D-928C-9AD9263DB371}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{008631DB-0533-426A-8A32-3A4886AE34F7}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{008631DB-0533-426A-8A32-3A4886AE34F7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.Dapper", "EtlLib.Nodes.Dapper\EtlLib.Nodes.Dapper.csproj", "{D1FF6F86-0ED5-47B5-B895-0B6BBD0036BE}"
 EndProject
@@ -33,7 +33,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E594D518
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.UnitTests", "EtlLib.UnitTests\EtlLib.UnitTests.csproj", "{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.FileCompression", "EtlLib.Nodes.FileCompression\EtlLib.Nodes.FileCompression.csproj", "{774972FA-3CC8-451D-9A01-E3E1F5D69294}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.FileCompression", "EtlLib.Nodes.FileCompression\EtlLib.Nodes.FileCompression.csproj", "{774972FA-3CC8-451D-9A01-E3E1F5D69294}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{54E43C5D-DFA1-4866-B891-F3A58EE46B04}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

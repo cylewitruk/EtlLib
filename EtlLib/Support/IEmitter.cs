@@ -1,6 +1,6 @@
 ﻿using EtlLib.Data;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Support
 {
     public interface IEmitter<in T> 
         where T : class, INodeOutput<T>, new()

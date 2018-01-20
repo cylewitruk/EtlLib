@@ -2,7 +2,7 @@
 using System.Linq;
 using EtlLib.Nodes;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Support
 {
     public class NodeStatistics
     {

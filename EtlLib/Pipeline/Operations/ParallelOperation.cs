@@ -4,20 +4,20 @@ using System.Threading.Tasks;
 
 namespace EtlLib.Pipeline.Operations
 {
-    public class ParallelOperation : AbstractEtlPipelineOperation
+    public class ParallelOperation : AbstractEtlOperationWithNoResult
     {
-        private readonly List<IEtlPipelineOperation> _steps;
+        private readonly List<IEtlOperation> _steps;
 
-        public ParallelOperation(string name, params IEtlPipelineOperation[] executables)
+        public ParallelOperation(string name, params IEtlOperation[] executables)
         {
-            _steps = new List<IEtlPipelineOperation>(executables);
+            _steps = new List<IEtlOperation>(executables);
             SetName(name);
         }
         
-        public override IEtlPipelineOperationResult Execute()
+        public override IEtlOperationResult Execute()
         {
             var tasks = new ConcurrentBag<Task>();
-            var errors = new ConcurrentBag<EtlPipelineOperationError>();
+            var errors = new ConcurrentBag<EtlOperationError>();
             var isSuccess = true;
 
             foreach (var step in _steps)
@@ -38,7 +38,7 @@ namespace EtlLib.Pipeline.Operations
 
             Task.WaitAll(tasks.ToArray());
 
-            return new EtlPipelineOperationResult(isSuccess);
+            return new EtlOperationResult(isSuccess);
         }
     }
 }

@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Data;
 using EtlLib.Nodes.Redshift.Builders;
 using EtlLib.Pipeline;
+using EtlLib.Pipeline.Operations;
 using Npgsql;
 
 namespace EtlLib.Nodes.Redshift
 {
-    public class ExecuteRedshiftBatchNode : AbstractEtlPipelineOperation
+    public class ExecuteRedshiftBatchOperation : AbstractEtlOperationWithNoResult
     {
         private readonly string _connectionString;
         private readonly List<string> _commands;
  
-        public ExecuteRedshiftBatchNode(string name, string connectionString, Action<RedshiftCommandBatchBuilder> red)
+        public ExecuteRedshiftBatchOperation(string name, string connectionString, Action<RedshiftCommandBatchBuilder> red)
         {
             SetName(name);
             _connectionString = connectionString;
@@ -31,7 +32,7 @@ namespace EtlLib.Nodes.Redshift
             }
         }
 
-        public override IEtlPipelineOperationResult Execute()
+        public override IEtlOperationResult Execute()
         {
             using (var con = new NpgsqlConnection(_connectionString))
             {
@@ -49,13 +50,13 @@ namespace EtlLib.Nodes.Redshift
                     }
                     catch (Exception e)
                     {
-                        return new EtlPipelineOperationResult(false)
+                        return new EtlOperationResult(false)
                             .WithError(this, e, redshiftCommand);
                     }
                 }
             }
 
-            return new EtlPipelineOperationResult(true);
+            return new EtlOperationResult(true);
         }
     }
 }

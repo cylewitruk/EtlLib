@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using EtlLib.Pipeline;
+using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Nodes.PostgreSQL
 {
-    public class ExecutePostgresCommandNode : AbstractEtlPipelineOperation
+    public class ExecutePostgresCommandNode : AbstractEtlOperationWithNoResult
     {
         private readonly string _connectionString;
         private readonly string _commandText;
@@ -32,7 +33,7 @@ namespace EtlLib.Nodes.PostgreSQL
             return this;
         }
 
-        public override IEtlPipelineOperationResult Execute()
+        public override IEtlOperationResult Execute()
         {
             using (var con = new Npgsql.NpgsqlConnection(_connectionString))
             {
@@ -58,7 +59,7 @@ namespace EtlLib.Nodes.PostgreSQL
                 }
             }
 
-            return new EtlPipelineOperationResult(true);
+            return new EtlOperationResult(true);
         }
     }
 }

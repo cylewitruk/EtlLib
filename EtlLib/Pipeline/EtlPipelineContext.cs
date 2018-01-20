@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EtlLib.Logging;
 using EtlLib.Nodes;
+using EtlLib.Support;
 
 namespace EtlLib.Pipeline
 {

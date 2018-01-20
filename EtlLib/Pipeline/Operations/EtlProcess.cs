@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,10 +9,26 @@ using System.Threading.Tasks;
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
+using EtlLib.Nodes.Impl;
+using EtlLib.Support;
 
 namespace EtlLib.Pipeline.Operations
 {
-    public sealed class EtlProcess : AbstractEtlPipelineOperation, IDisposable
+    public class EtlProcess<TOut> : EtlProcess, IEtlOperationWithEnumerableResult<TOut>
+        where TOut : class, INodeOutput<TOut>, new()
+    {
+        public override IEtlOperationResult Execute()
+        {
+            var baseResult = base.Execute();
+
+            var collector = (GenericResultCollectionNode<TOut>) ResultCollector;
+            var result = new EnumerableEtlOperationResult<TOut>(baseResult.IsSuccess, collector.Result);
+            return result;
+        }
+    }
+
+    //TODO: Maybe break this out to EtlProcessDescriptor and have separate executors for noresult vs. enumerableresult?
+    public class EtlProcess : AbstractEtlOperationWithNoResult, IDisposable
     {
         private readonly ILogger _log;
         private readonly List<IInputOutputAdapter> _ioAdapters;
@@ -19,29 +36,38 @@ namespace EtlLib.Pipeline.Operations
         private readonly List<INode> _nodes;
         private readonly NodeStatistics _nodeStatistics;
         private readonly IErrorHandler _errorHandler;
-        private readonly ConcurrentBag<EtlPipelineOperationError> _errors;
+        private readonly ConcurrentBag<EtlOperationError> _errors;
 
-        public EtlProcess(EtlPipelineContext context)
+        protected INodeWithInput ResultCollector { get; private set; }
+        protected bool HasResult { get; private set; }
+
+        public EtlProcess()
         {
-            _log = context.GetLogger("EtlLib.EtlProcess");
+            _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
             _ioAdapters = new List<IInputOutputAdapter>();
             _attachmentDeduplicationList = new List<string>();
             _nodes = new List<INode>();
             _nodeStatistics = new NodeStatistics();
-            _errors = new ConcurrentBag<EtlPipelineOperationError>();
+            _errors = new ConcurrentBag<EtlOperationError>();
             _errorHandler = new ErrorHandler()
             {
                 OnItemErrorFn = (n, e, i) =>
                 {
                     _log.Error(e.Message);
                     _nodeStatistics.IncrementErrors(n);
-                    _errors.Add(new EtlPipelineOperationError(this, n, e, i));
+                    _errors.Add(new EtlOperationError(this, n, e, i));
+
+                    if (EtlLibConfig.EnableDebug)
+                        Debugger.Break();
                 },
                 OnErrorFn = (n, e) =>
                 {
                     _log.Error(e.Message);
                     _nodeStatistics.IncrementErrors(n);
-                    _errors.Add(new EtlPipelineOperationError(this, n, e));
+                    _errors.Add(new EtlOperationError(this, n, e));
+
+                    if (EtlLibConfig.EnableDebug)
+                        Debugger.Break();
                 }
             };
         }
@@ -114,12 +140,18 @@ namespace EtlLib.Pipeline.Operations
                 input.SetInput(ioAdapter.GetConsumingEnumerable(input));
             }
 
+            if (input is GenericResultCollectionNode<T> collector)
+            {
+                HasResult = true;
+                ResultCollector = collector;
+            }
+
             input.SetWaiter(ioAdapter.Waiter);
             
             _attachmentDeduplicationList.Add($"{output.Id}:{input.Id}");
         }
 
-        public override IEtlPipelineOperationResult Execute()
+        public override IEtlOperationResult Execute()
         {
             _log.Info(new string('=', 80));
             _log.Info($"= Executing ETL Process '{Name}' (Started {DateTime.Now})");
@@ -151,6 +183,7 @@ namespace EtlLib.Pipeline.Operations
 
                         _log.Info($"Execute task for node {node} has completed in {sw.Elapsed}.");
                         elapsedDict[node] = sw.Elapsed;
+
                     });
 
                 tasks.Add(task);
@@ -188,7 +221,7 @@ namespace EtlLib.Pipeline.Operations
             _log.Info($"= Total Errors: {_nodeStatistics.TotalErrors}");
             _log.Info(new string('=', 80));
 
-            return new EtlPipelineOperationResult(_errors.Count == 0)
+            return new EtlOperationResult(_errors.Count == 0)
                 .WithErrors(_errors);
         }
 
@@ -196,6 +229,7 @@ namespace EtlLib.Pipeline.Operations
         {
             _log.Debug("Disposing of all input/output adapters.");
             _ioAdapters.ForEach(x => x.Dispose());
+            _nodes.Clear();
         }
     }
 }

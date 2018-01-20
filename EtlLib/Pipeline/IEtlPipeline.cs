@@ -7,12 +7,12 @@ namespace EtlLib.Pipeline
 {
     public interface IEtlPipeline
     {
-        PipelineResult Execute();
+        EtlPipelineResult Execute();
 
         IEtlPipeline Run(Action<EtlPipelineContext, IEtlProcessBuilder> builder);
 
-        IEtlPipeline Run(IEtlPipelineOperation executable);
-        IEtlPipeline Run(Func<EtlPipelineContext, IEtlPipelineOperation> ctx);
-        IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IEtlPipelineOperation>> ctx);
+        IEtlPipeline Run(IEtlOperation executable);
+        IEtlPipeline Run(Func<EtlPipelineContext, IEtlOperation> ctx);
+        IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IEtlOperation>> ctx);
     }
 }

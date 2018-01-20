@@ -6,7 +6,7 @@ using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
 
-namespace EtlLib.Pipeline
+namespace EtlLib.Support
 {
     public interface IInputOutputAdapter : IDisposable
     {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using EtlLib.Data;
 using EtlLib.Pipeline;
+using EtlLib.Support;
 
 namespace EtlLib.Nodes
 {

@@ -12,7 +12,7 @@ namespace EtlLib.UnitTests.Nodes
         [Fact]
         public void Can_generate_fixed_number_of_items()
         {
-            var node = new GenericDataGenerationNode<Row, object>(5, (i, gen) =>
+            var node = new GenericDataGenerationNode<Row, object>(5, (ctx, i, gen) =>
             {
                 var row = new Row
                 {
@@ -43,7 +43,7 @@ namespace EtlLib.UnitTests.Nodes
         {
             var node = new GenericDataGenerationNode<Row, DateTime>(
                 gen => gen.State <= DateTime.ParseExact("2018-01-31 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), 
-                (i, gen) =>
+                (ctx, i, gen) =>
                 {
                     if (i == 1)
                         gen.SetState(DateTime.ParseExact("2018-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));

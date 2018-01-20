@@ -90,6 +90,8 @@ namespace EtlLib.Nodes.AmazonS3
                     Emit(new AmazonS3WriterNodeResult(objectKey, result));
                 }
             }
+
+            SignalEnd();
         }
     }
 }
