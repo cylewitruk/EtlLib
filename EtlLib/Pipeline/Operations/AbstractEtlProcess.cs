@@ -13,7 +13,7 @@ namespace EtlLib.Pipeline.Operations
             builder(b);
 
             _etlProcess = ((EtlProcessBuilder)b).Build();
-            SetName(_etlProcess.Name);
+            Named(_etlProcess.Name);
         }
 
         public override IEtlOperationResult Execute()

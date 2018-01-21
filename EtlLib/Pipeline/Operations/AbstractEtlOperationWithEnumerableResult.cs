@@ -5,7 +5,7 @@
         public string Name { get; private set; }
         public EtlPipelineContext Context { get; private set; }
 
-        public IEtlOperation SetName(string name)
+        public IEtlOperation Named(string name)
         {
             Name = name;
             return this;

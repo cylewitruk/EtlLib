@@ -5,7 +5,7 @@
         string Name { get; }
         EtlPipelineContext Context { get; }
 
-        IEtlOperation SetName(string name);
+        IEtlOperation Named(string name);
         IEtlOperation SetContext(EtlPipelineContext context);
 
         IEtlOperationResult Execute();

@@ -129,7 +129,7 @@ namespace EtlLib.Pipeline.Builders
         public EtlProcess Build()
         {
             var process = new EtlProcess();
-            process.SetName(Name);
+            process.Named(Name);
 
             var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
 
@@ -159,7 +159,7 @@ namespace EtlLib.Pipeline.Builders
             where TOut : class, INodeOutput<TOut>, new()
         {
             var process = new EtlProcess<TOut>();
-            process.SetName(Name);
+            process.Named(Name);
 
             var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
 

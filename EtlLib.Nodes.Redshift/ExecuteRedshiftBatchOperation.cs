@@ -15,7 +15,7 @@ namespace EtlLib.Nodes.Redshift
  
         public ExecuteRedshiftBatchOperation(string name, string connectionString, Action<RedshiftCommandBatchBuilder> red)
         {
-            SetName(name);
+            Named(name);
             _connectionString = connectionString;
 
             var builder = new RedshiftCommandBatchBuilder();

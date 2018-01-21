@@ -15,7 +15,7 @@ namespace EtlLib.Nodes.PostgreSQL
 
         public ExecutePostgresCommandNode(string name, string connectionString, string commandText)
         {
-            SetName(name);
+            Named(name);
             _connectionString = connectionString;
             _commandText = commandText;
             _parameters = new Dictionary<string, object>();

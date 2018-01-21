@@ -4,6 +4,7 @@ using EtlLib.Data;
 using EtlLib.Logging.NLog;
 using EtlLib.Nodes.AmazonS3;
 using EtlLib.Nodes.CsvFiles;
+using EtlLib.Nodes.FileCompression;
 using EtlLib.Nodes.Redshift;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
@@ -43,6 +44,7 @@ namespace EtlLib.ConsoleTest
                     return newRow;
                 })
                 .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv"))
+                .BZip2Files()
                 .CompleteWithResult(ctx => new AmazonS3WriterNode(***REMOVED***, "***REMOVED***")
                     .WithBasicCredentials("***REMOVED***", "***REMOVED***")
                 );
@@ -55,7 +57,7 @@ namespace EtlLib.ConsoleTest
                 {
                     cfg
                         .Named("Test ETL Process")
-                        .RegisterObjectPool<Row>(100000)
+                        //.RegisterObjectPool<Row>(50000)
                         .WithContextInitializer(ctx =>
                         {
                             ctx.Config["s3_bucket_name"] = "***REMOVED***";
@@ -64,7 +66,12 @@ namespace EtlLib.ConsoleTest
                             ctx.Config["outfile"] = @"C:\Users\Cyle\Desktop\cyle_d_date.csv";
                         });
                 })
-                .Run(process)
+                .RunWithResult(process)
+                    .ForEachResult((context, i, arg3) =>
+                    {
+                        context.State["s3_filename"] = arg3.ObjectKey;
+                        Console.WriteLine($"Setting 's3_filename' to '{arg3.ObjectKey}'");
+                    })
                 /*.Run(ctx => new GenerateDateDimensionEtlProcess(
                     ctx.Config["s3_bucket_name"], ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"], ctx.Config["outfile"]))
                 .Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>

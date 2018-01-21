@@ -11,7 +11,7 @@ namespace EtlLib.Pipeline.Operations
         public ParallelOperation(string name, params IEtlOperation[] executables)
         {
             _steps = new List<IEtlOperation>(executables);
-            SetName(name);
+            Named(name);
         }
         
         public override IEtlOperationResult Execute()

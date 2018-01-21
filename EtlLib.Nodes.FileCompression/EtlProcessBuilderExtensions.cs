@@ -14,11 +14,25 @@ namespace EtlLib.Nodes.FileCompression
             return builder.Continue(ctx => node);
         }
 
+        public static IOutputNodeBuilderContext<NodeOutputWithFilePath> GZipFiles(
+            this IOutputNodeBuilderContext<NodeOutputWithFilePath> builder)
+        {
+            var node = new GZipFileCompressionNode();
+            return builder.Continue(ctx => node);
+        }
+
         public static IOutputNodeBuilderContext<NodeOutputWithFilePath> BZip2Files(
             this IOutputNodeBuilderContext<NodeOutputWithFilePath> builder, Action<BZip2FileCompressionNode> cfg)
         {
             var node = new BZip2FileCompressionNode();
             cfg(node);
+            return builder.Continue(ctx => node);
+        }
+
+        public static IOutputNodeBuilderContext<NodeOutputWithFilePath> BZip2Files(
+            this IOutputNodeBuilderContext<NodeOutputWithFilePath> builder)
+        {
+            var node = new BZip2FileCompressionNode();
             return builder.Continue(ctx => node);
         }
     }
