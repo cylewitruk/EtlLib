@@ -47,6 +47,34 @@ namespace EtlLib.Support
             ((ObjectPool<T>)pool).Return(obj);
         }
 
+        public bool HasObjectPool(Type t)
+        {
+            return _objectPools.TryGetValue(t, out var _);
+        }
+
+        public IObjectPool GetObjectPool(Type t)
+        {
+            if (!_objectPools.TryGetValue(t, out var pool))
+                throw new Exception($"Could not find object pool for type '{t.Name}'.");
+            return pool;
+        }
+
+        public object Borrow(Type t)
+        {
+            return !_objectPools.TryGetValue(t, out var pool)
+                ? Activator.CreateInstance(t)
+                : pool.BorrowObject();
+        }
+
+        public void Return(object obj)
+        {
+            var t = obj.GetType();
+            if (!_objectPools.TryGetValue(t, out var pool))
+                throw new Exception($"Could not find object pool for type '{t.Name}'.");
+
+            pool.ReturnObject(obj);
+        }
+
         public void DeAllocate()
         {
             foreach(var pool in _objectPools.Values)

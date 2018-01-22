@@ -16,14 +16,9 @@ namespace EtlLib.Pipeline.Operations
             Named(_etlProcess.Name);
         }
 
-        public override IEtlOperationResult Execute()
+        public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
-            return _etlProcess.Execute();
-        }
-
-        public override void OnContextChanged(EtlPipelineContext newContext)
-        {
-            _etlProcess.SetContext(newContext);
+            return _etlProcess.Execute(context);
         }
     }
 }

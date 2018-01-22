@@ -37,7 +37,10 @@ namespace EtlLib.Nodes
         INodeWithInput2<TIn> SetInput2(IEnumerable<TIn> input2);
     }
 
-    public interface INodeWithOutput : INode { }
+    public interface INodeWithOutput : INode
+    {
+        Type OutputType { get; }
+    }
 
     public interface INodeWithOutput<TOut> : INodeWithOutput
         where TOut : class, INodeOutput<TOut>, new()

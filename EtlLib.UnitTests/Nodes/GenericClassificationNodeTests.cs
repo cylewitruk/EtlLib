@@ -18,12 +18,12 @@ namespace EtlLib.UnitTests.Nodes
         {
             var input = new List<Row>
             {
-                new Row() {["number"] = 1},
-                new Row() {["number"] = 2},
-                new Row() {["number"] = 3},
-                new Row() {["number"] = 4},
-                new Row() {["number"] = 5},
-                new Row() {["number"] = 6}
+                new Row {["number"] = 1},
+                new Row {["number"] = 2},
+                new Row {["number"] = 3},
+                new Row {["number"] = 4},
+                new Row {["number"] = 5},
+                new Row {["number"] = 6}
             };
 
             var node = new GenericClassificationNode<Row, string, object>(row => row["class"])
@@ -52,7 +52,7 @@ namespace EtlLib.UnitTests.Nodes
         {
             // Passing variable results in a MemberExpression
             var columnName = "class"; 
-            var node = new GenericClassificationNode<Row, string, object>(row => row[columnName])
+            new GenericClassificationNode<Row, string, object>(row => row[columnName])
                 .When(x => x.GetAs<int>("number") % 3 == 0, "MOD_3")
                 .When(x => x.GetAs<int>("number") % 2 == 0, "MOD_2")
                 .Default("NOT_MOD_2_OR_3");
@@ -62,7 +62,7 @@ namespace EtlLib.UnitTests.Nodes
         public void Can_create_when_constantexpression_used()
         {
             // Passing a constant string results in a ConstantExpression
-            var node = new GenericClassificationNode<Row, string, object>(row => row["class"])
+            new GenericClassificationNode<Row, string, object>(row => row["class"])
                 .When(x => x.GetAs<int>("number") % 3 == 0, "MOD_3")
                 .When(x => x.GetAs<int>("number") % 2 == 0, "MOD_2")
                 .Default("NOT_MOD_2_OR_3");

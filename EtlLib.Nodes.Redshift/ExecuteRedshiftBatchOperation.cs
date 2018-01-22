@@ -32,7 +32,7 @@ namespace EtlLib.Nodes.Redshift
             }
         }
 
-        public override IEtlOperationResult Execute()
+        public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
             using (var con = new NpgsqlConnection(_connectionString))
             {

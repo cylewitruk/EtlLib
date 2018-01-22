@@ -14,7 +14,7 @@ namespace EtlLib.Pipeline.Operations
             Named(name);
         }
         
-        public override IEtlOperationResult Execute()
+        public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
             var tasks = new ConcurrentBag<Task>();
             var errors = new ConcurrentBag<EtlOperationError>();
@@ -24,7 +24,7 @@ namespace EtlLib.Pipeline.Operations
             {
                 var task = Task.Run(() =>
                 {
-                    var result = step.Execute();
+                    var result = step.Execute(context);
                     foreach (var err in result.Errors)
                     {
                         errors.Add(err);

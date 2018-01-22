@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using EtlLib.Logging;
 using EtlLib.Pipeline.Builders;
@@ -50,7 +49,7 @@ namespace EtlLib.Pipeline
             for (var i = 0; i < _steps.Count; i++)
             {
                 _log.Info($"Executing step #{i} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
-                var result = _steps[i].Execute();
+                var result = _steps[i].Execute(_context);
                 LastResult = result;
 
                 _executionResults[_steps[i]] = result;
@@ -129,21 +128,18 @@ namespace EtlLib.Pipeline
 
         private IEtlPipeline RegisterOperation(IEtlOperation operation)
         {
-            operation.SetContext(_context);
             _steps.Add(operation);
             return this;
         }
 
         private IEtlPipelineEnumerableResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithEnumerableResult<TOut> operation)
         {
-            operation.SetContext(_context);
             _steps.Add(operation);
             return new EtlPipelineEnumerableResultContext<TOut>(this, _context);
         }
 
         private IEtlPipelineWithScalarResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithScalarResult<TOut> operation)
         {
-            operation.SetContext(_context);
             _steps.Add(operation);
             return new EtlPipelineWithScalarResultContext<TOut>(this, _context);
         }
@@ -256,36 +252,4 @@ namespace EtlLib.Pipeline
             return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named($"Foreach {typeof(TOut).Name} in Result"));
         }
     }
-
-    public class DynamicInvokeEtlOperation : AbstractEtlOperationWithNoResult
-    {
-        private readonly Delegate _action;
-        private readonly object[] _args;
-
-        public DynamicInvokeEtlOperation(Delegate action, params object[] args)
-        {
-            _action = action;
-            _args = args;
-        }
-
-        public override IEtlOperationResult Execute()
-        {
-            try
-            {
-                _action.DynamicInvoke(_args);
-            }
-            catch (Exception ex)
-            {
-                if (EtlLibConfig.EnableDebug)
-                    Debugger.Break();
-
-                return new EtlOperationResult(false)
-                    .WithError(this, ex);
-            }
-            
-            return new EtlOperationResult(true);
-        }
-    }
-
-
 }

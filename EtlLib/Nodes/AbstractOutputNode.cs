@@ -1,6 +1,5 @@
 ﻿using System;
 using EtlLib.Data;
-using EtlLib.Pipeline;
 using EtlLib.Support;
 
 namespace EtlLib.Nodes
@@ -9,6 +8,7 @@ namespace EtlLib.Nodes
         where TOut : class, INodeOutput<TOut>, new()
     {
         public IEmitter<TOut> Emitter { get; private set; }
+        public Type OutputType => typeof(TOut);
 
         public INodeWithOutput<TOut> SetEmitter(IEmitter<TOut> emitter)
         {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
@@ -18,6 +17,8 @@ namespace EtlLib.Support
 
         bool AttachConsumer<T>(INodeWithInput2<T> input)
             where T : class, INodeOutput<T>, new();
+
+        void SetObjectPool(IObjectPool pool);
     }
 
     public class InputOutputAdapter<T> : IInputOutputAdapter, IEmitter<T>
@@ -27,7 +28,7 @@ namespace EtlLib.Support
         private readonly ConcurrentBag<INodeWithInput<T>> _inputs;
         private readonly INodeWithOutput<T> _output;
         private readonly NodeStatistics _nodeStatistics;
-        private readonly Func<T> _borrowFromObjectPoolFn;
+        private ObjectPool<T> _objectPool;
         private ILogger _log;
         private volatile int _emittedItems;
 
@@ -36,13 +37,12 @@ namespace EtlLib.Support
         public INodeWaiter Waiter { get; }
         public int EmitCount => _emittedItems;
 
-        public InputOutputAdapter(INodeWithOutput<T> output, NodeStatistics nodeStatistics, Func<T> borrowFromObjectPoolFn)
+        public InputOutputAdapter(INodeWithOutput<T> output, NodeStatistics nodeStatistics)
         {
             _queueMap = new ConcurrentDictionary<INode, BlockingCollection<T>>();
             _inputs = new ConcurrentBag<INodeWithInput<T>>();
             _output = output;
             _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.IOAdapter");
-            _borrowFromObjectPoolFn = borrowFromObjectPoolFn;
             _nodeStatistics = nodeStatistics;
 
             if (output is IBlockingNode)
@@ -56,6 +56,11 @@ namespace EtlLib.Support
             {
                 Waiter = new NoWaitNodeWaiter();
             }
+        }
+
+        public void SetObjectPool(IObjectPool pool)
+        {
+            _objectPool = (ObjectPool<T>)pool;
         }
 
         public InputOutputAdapter<T> WithLogger(ILogger log)
@@ -121,7 +126,7 @@ namespace EtlLib.Support
                 }
                 else
                 {
-                    var duplicatedItem = _borrowFromObjectPoolFn();
+                    var duplicatedItem = _objectPool?.Borrow() ?? new T();
                     item.CopyTo(duplicatedItem);
                     queue.Value.Add(duplicatedItem);
                 }
@@ -144,45 +149,7 @@ namespace EtlLib.Support
         {
             foreach(var buffer in _queueMap)
                 buffer.Value.Dispose();
-        }
-    }
-
-    public class BlockingWaitSignaller : INodeWaitSignaller, INodeWaiter
-    {
-        private readonly ManualResetEventSlim _resetEvent;
-
-        public BlockingWaitSignaller()
-        {
-            _resetEvent = new ManualResetEventSlim();
-        }
-
-        public void SignalWaitEnd()
-        {
-            _resetEvent.Set();
-        }
-
-        public void Wait()
-        {
-            _resetEvent.Wait();
-        }
-
-        public void Dispose()
-        {
-            _resetEvent?.Dispose();
-        }
-    }
-
-    public class NoWaitNodeWaiter : INodeWaiter
-    {
-        public static NoWaitNodeWaiter Instance;
-
-        static NoWaitNodeWaiter()
-        {
-            Instance = new NoWaitNodeWaiter();
-        }
-
-        public void Wait()
-        {
+            _queueMap.Clear();
         }
     }
 }

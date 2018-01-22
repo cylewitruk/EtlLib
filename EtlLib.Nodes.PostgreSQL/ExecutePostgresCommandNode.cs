@@ -33,7 +33,7 @@ namespace EtlLib.Nodes.PostgreSQL
             return this;
         }
 
-        public override IEtlOperationResult Execute()
+        public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
             using (var con = new Npgsql.NpgsqlConnection(_connectionString))
             {

@@ -13,7 +13,6 @@ namespace EtlLib.ConsoleTest
 {
     internal class Program
     {
-        // S3 ***REMOVED*** (AccessKey: ***REMOVED***, SecretKey: ***REMOVED***)
         private static void Main(string[] args)
         {
             var loggingAdapter = new NLogLoggingAdapter();
@@ -67,11 +66,11 @@ namespace EtlLib.ConsoleTest
                         });
                 })
                 .RunWithResult(process)
-                    .ForEachResult((context, i, arg3) =>
-                    {
-                        context.State["s3_filename"] = arg3.ObjectKey;
-                        Console.WriteLine($"Setting 's3_filename' to '{arg3.ObjectKey}'");
-                    })
+                .ForEachResult((context, i, arg3) =>
+                {
+                    context.State["s3_filename"] = arg3.ObjectKey;
+                    Console.WriteLine($"Setting 's3_filename' to '{arg3.ObjectKey}'");
+                })
                 /*.Run(ctx => new GenerateDateDimensionEtlProcess(
                     ctx.Config["s3_bucket_name"], ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"], ctx.Config["outfile"]))
                 .Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>

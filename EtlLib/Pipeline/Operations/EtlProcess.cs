@@ -16,9 +16,9 @@ namespace EtlLib.Pipeline.Operations
     public class EtlProcess<TOut> : EtlProcess, IEtlOperationWithEnumerableResult<TOut>
         where TOut : class, INodeOutput<TOut>, new()
     {
-        public override IEtlOperationResult Execute()
+        public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
-            var baseResult = base.Execute();
+            var baseResult = base.Execute(context);
 
             var collector = (GenericResultCollectionNode<TOut>) ResultCollector;
             var result = new EnumerableEtlOperationResult<TOut>(baseResult.IsSuccess, collector.Result);
@@ -88,12 +88,6 @@ namespace EtlLib.Pipeline.Operations
                 RegisterNode(node);
         }
 
-        private T BorrowObject<T>()
-            where T : class, IResettable, new()
-        {
-            return Context.ObjectPool.Borrow<T>();
-        }
-
         public void AttachInputToOutput<T>(INodeWithOutput<T> output, INodeWithInput<T> input) 
             where T : class, INodeOutput<T>, new()
         {
@@ -109,7 +103,7 @@ namespace EtlLib.Pipeline.Operations
 
             if (!(_ioAdapters.SingleOrDefault(x => x.OutputNode.Equals(output)) is InputOutputAdapter<T> ioAdapter))
             {
-                ioAdapter = new InputOutputAdapter<T>(output, _nodeStatistics, BorrowObject<T>);
+                ioAdapter = new InputOutputAdapter<T>(output, _nodeStatistics);
 
                 output.SetEmitter(ioAdapter);
 
@@ -150,7 +144,7 @@ namespace EtlLib.Pipeline.Operations
             _attachmentDeduplicationList.Add($"{output.Id}:{input.Id}");
         }
 
-        public override IEtlOperationResult Execute()
+        public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
             _log.Info(new string('=', 80));
             _log.Info($"= Executing ETL Process '{Name}' (Started {DateTime.Now})");
@@ -171,7 +165,13 @@ namespace EtlLib.Pipeline.Operations
 
                         try
                         {
-                            node.Execute(Context);
+                            if (node is INodeWithOutput outputNode && context.ObjectPool.HasObjectPool(outputNode.OutputType))
+                            {
+                                var ioAdapter = _ioAdapters.SingleOrDefault(x => x.OutputNode == node);
+                                ioAdapter.SetObjectPool(context.ObjectPool.GetObjectPool(outputNode.OutputType));
+                            }
+
+                            node.Execute(context);
                         }
                         catch (Exception e)
                         {
@@ -203,7 +203,6 @@ namespace EtlLib.Pipeline.Operations
             {
                 var sb = new StringBuilder();
                 sb.Append($"= * {elapsedStats[i].Key} => Elapsed: {elapsedStats[i].Value}");
-                var ioAdapter = _ioAdapters.SingleOrDefault(x => x.OutputNode == elapsedStats[i].Key);
 
                 var nodeStats = _nodeStatistics.GetNodeStatistics(elapsedStats[i].Key);
                 sb.Append($" [R={nodeStats.Reads}, W={nodeStats.Writes}, E={nodeStats.Errors}]");

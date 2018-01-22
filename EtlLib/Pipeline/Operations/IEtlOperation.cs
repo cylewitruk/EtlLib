@@ -3,12 +3,9 @@
     public interface IEtlOperation
     {
         string Name { get; }
-        EtlPipelineContext Context { get; }
 
         IEtlOperation Named(string name);
-        IEtlOperation SetContext(EtlPipelineContext context);
-
-        IEtlOperationResult Execute();
+        IEtlOperationResult Execute(EtlPipelineContext context);
     }
 
     public interface IEtlOperationWithNoResult : IEtlOperation
