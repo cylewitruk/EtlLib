@@ -21,6 +21,8 @@ namespace EtlLib.Pipeline.Builders
 
         IEtlProcessCompletedWithResultBuilderContext<TOut> CompleteWithResult<TOut>(Func<EtlPipelineContext, INodeWithInputOutput<TIn, TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new();
+
+        IEtlProcessCompletedWithResultBuilderContext<TIn> CompleteWithResult();
     }
 
     public class OutputNodeBuilderContext<TIn> : IOutputNodeBuilderContext<TIn>
@@ -111,6 +113,20 @@ namespace EtlLib.Pipeline.Builders
                 });
 
             return new EtlProcessCompletedWithResultBuilderContext<TOut>(_parentBuilder, resultCollectionNode.Result);
+        }
+
+        public IEtlProcessCompletedWithResultBuilderContext<TIn> CompleteWithResult()
+        {
+            var resultCollectionNode = new GenericResultCollectionNode<TIn>();
+            _parentBuilder.RegisterNode(resultCollectionNode, (current, last) =>
+            {
+                current.AddSourceNode((INodeWithOutput)last.ThisNode);
+                last.AddTargetNode(resultCollectionNode);
+
+                _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {resultCollectionNode}");
+            });
+
+            return new EtlProcessCompletedWithResultBuilderContext<TIn>(_parentBuilder, resultCollectionNode.Result);
         }
     }
 }
