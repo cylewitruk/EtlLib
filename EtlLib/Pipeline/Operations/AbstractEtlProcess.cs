@@ -5,7 +5,7 @@ namespace EtlLib.Pipeline.Operations
 {
     public abstract class AbstractEtlProcess : AbstractEtlOperationWithNoResult
     {
-        private EtlProcess _etlProcess;
+        private IEtlOperationWithNoResult _etlProcess;
 
         protected void Build(Action<IEtlProcessBuilder> builder)
         {

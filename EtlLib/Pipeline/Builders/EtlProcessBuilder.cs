@@ -5,6 +5,7 @@ using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
 using EtlLib.Pipeline.Operations;
+using EtlLib.Support;
 
 namespace EtlLib.Pipeline.Builders
 {
@@ -30,19 +31,17 @@ namespace EtlLib.Pipeline.Builders
         internal EtlPipelineContext Context { get; }
         public string Name { get; private set; }
 
-        internal Dictionary<Guid, InputOutputMap> NodeGraph { get; }
-        internal Dictionary<Guid, EtlProcessBuilder> SubProcesses { get; }
-        internal INode FirstNode { get; private set; }
-        internal INode LastNode { get; private set; }
+        private IInputOutputAdapter _last;
+        private readonly List<IInputOutputAdapter> _ioAdapters;
 
         private EtlProcessBuilder()
         {
             Id = Guid.NewGuid();
             Name = "Unnamed (" + Id + ")";
             Context = new EtlPipelineContext();
-            NodeGraph = new Dictionary<Guid, InputOutputMap>();
-            SubProcesses = new Dictionary<Guid, EtlProcessBuilder>();
             Log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.EtlProcessBuilder");
+
+            _ioAdapters = new List<IInputOutputAdapter>();
         }
 
         public static IEtlProcessBuilder Create()
@@ -62,125 +61,67 @@ namespace EtlLib.Pipeline.Builders
             where TOut : class, INodeOutput<TOut>, new()
         {
             var node = ctx(Context);
-            FirstNode = node;
 
-            RegisterNode(node, (m, last) =>
-            {
-                Log.Debug($"'{Name}' registered new input {node}");
-            });
+            RegisterOutputNode(node);
 
             return new OutputNodeBuilderContext<TOut>(this, node);
         }
 
-        /// <summary>
-        /// Delegate for node registration mappings.
-        /// </summary>
-        /// <param name="current">The InputOutputMap of the current node being registered.</param>
-        /// <param name="last">The InputOututMap of the previously registered node.</param>
-        public delegate void MapActionDelegate(InputOutputMap current, InputOutputMap last);
-
-        /// <summary>
-        /// Performs a node registration.
-        /// </summary>
-        /// <param name="node">The node which is being registered.</param>
-        /// <param name="map">The map of the node prior in the chain</param>
-        internal void RegisterNode(INode node, MapActionDelegate map)
+        public void AttachNodeToOutput<TIn>(INodeWithInput<TIn> node)
+            where TIn : class, INodeOutput<TIn>, new()
         {
             node.SetId(Guid.NewGuid());
-            var m = new InputOutputMap(node, this);
-            map(m, LastNode == null ? null : NodeGraph[LastNode.Id]);
-            NodeGraph[node.Id] = m;
-            LastNode = node;
+
+            ((IInputOutputAdapter<TIn>)_last).AttachConsumer(node);
+            Log.Debug($"'{Name}' registered [output from] {_last.OutputNode} as [input to] target -> {node}");
         }
 
-        /// <summary>
-        /// Registers a subprocess to this process.
-        /// </summary>
-        /// <param name="attachTo">The node with output which to attach the subprocess to.</param>
-        /// <param name="name">The name of the subprocess.  Default uses the name of the current process and appends '(subprocess #)'.</param>
-        /// <returns>The new EtlProcessBuilder representing the subprocess.</returns>
-        internal EtlProcessBuilder RegisterSubProcess(INode attachTo, string name = null)
+        public void RegisterInputOutputNode<TIn, TOut>(INodeWithInputOutput<TIn, TOut> node)
+            where TIn : class, INodeOutput<TIn>, new()
+            where TOut : class, INodeOutput<TOut>, new()
         {
-            var builder = new EtlProcessBuilder()
-            {
-                FirstNode = attachTo,
-                LastNode = attachTo,
-                Name = name ?? $"{Name} (subprocess {SubProcesses.Count + 1})"
-            };
-            builder.NodeGraph[attachTo.Id] = NodeGraph[attachTo.Id];
+            node.SetId(Guid.NewGuid());
 
-            builder.Log.Debug($"Created new EtlProcessBuilder '{builder.Name}' for subprocess attached to {attachTo}");
-            SubProcesses.Add(builder.Id, builder);
+            Log.Debug($"'{Name}' registered new continue {node}");
 
-            return builder;
+            AttachNodeToOutput(node);
+            RegisterOutputNode(node);
         }
 
-        /// <summary>
-        /// Retrieves the InputOutputMap for the given node.
-        /// </summary>
-        /// <param name="node">The node to retrieve the InputOutputMap for.</param>
-        /// <returns>The InputOutputMap for the given node.</returns>
-        public InputOutputMap GetIoMapForNode(INode node) => NodeGraph[node.Id];
+        public void RegisterOutputNode<TOut>(INodeWithOutput<TOut> node)
+            where TOut : class, INodeOutput<TOut>, new()
+        {
+            node.SetId(Guid.NewGuid());
+
+            var ioAdapter = new InputOutputAdapter<TOut>(node);
+            _ioAdapters.Add(ioAdapter);
+            _last = ioAdapter;
+
+            Log.Debug($"'{Name}' registered new input {node}");
+        }
+
+        public void ClearLastOutputAdapter()
+        {
+            _last = null;
+        }
 
         /// <summary>
         /// Builds a new EtlProcess.
         /// </summary>
         /// <returns></returns>
-        public EtlProcess Build()
+        public IEtlOperationWithNoResult Build()
         {
-            var process = new EtlProcess();
+            var process = new EtlProcess(_ioAdapters.ToArray());
             process.Named(Name);
-
-            var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
-
-            AttachToTargets(FirstNode);
-
-            void AttachToTargets(INode node)
-            {
-                if (!(node is INodeWithOutput))
-                    return;
-
-                var nodeMap = GetIoMapForNode(node);
-                
-                var outputType = node.GetType().GetInterface(typeof(INodeWithOutput<>).FullName).GenericTypeArguments[0];
-                var invocable = method.MakeGenericMethod(outputType);
-
-                foreach (var target in nodeMap.TargetNodes)
-                {
-                    invocable.Invoke(process, new object[] { node, target });
-                    AttachToTargets(target);
-                }
-            }
 
             return process;
         }
 
-        public EtlProcess<TOut> Build<TOut>() 
+        public IEtlOperationWithEnumerableResult<TOut> Build<TOut>() 
             where TOut : class, INodeOutput<TOut>, new()
         {
-            var process = new EtlProcess<TOut>();
+            var process = new EtlProcess<TOut>(_ioAdapters.ToArray());
             process.Named(Name);
-
-            var method = typeof(EtlProcess).GetMethod("AttachInputToOutput");
-
-            AttachToTargets(FirstNode);
-
-            void AttachToTargets(INode node)
-            {
-                if (!(node is INodeWithOutput))
-                    return;
-
-                var nodeMap = GetIoMapForNode(node);
-
-                var outputType = node.GetType().GetInterface(typeof(INodeWithOutput<>).FullName).GenericTypeArguments[0];
-                var invocable = method.MakeGenericMethod(outputType);
-
-                foreach (var target in nodeMap.TargetNodes)
-                {
-                    invocable.Invoke(process, new object[] { node, target });
-                    AttachToTargets(target);
-                }
-            }
 
             return process;
         }

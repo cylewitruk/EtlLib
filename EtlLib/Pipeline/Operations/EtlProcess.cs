@@ -13,9 +13,13 @@ using EtlLib.Support;
 
 namespace EtlLib.Pipeline.Operations
 {
-    public class EtlProcess<TOut> : EtlProcess, IEtlOperationWithEnumerableResult<TOut>
+    internal class EtlProcess<TOut> : EtlProcess, IEtlOperationWithEnumerableResult<TOut>
         where TOut : class, INodeOutput<TOut>, new()
     {
+        protected internal EtlProcess(IInputOutputAdapter[] ioAdapters) : base(ioAdapters)
+        {
+        }
+
         public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
             var baseResult = base.Execute(context);
@@ -25,27 +29,24 @@ namespace EtlLib.Pipeline.Operations
             return result;
         }
     }
-
-    //TODO: Maybe break this out to EtlProcessDescriptor and have separate executors for noresult vs. enumerableresult?
-    public class EtlProcess : AbstractEtlOperationWithNoResult, IDisposable
+    
+    internal class EtlProcess : AbstractEtlOperationWithNoResult, IDisposable
     {
         private readonly ILogger _log;
         private readonly List<IInputOutputAdapter> _ioAdapters;
-        private readonly List<string> _attachmentDeduplicationList;
         private readonly List<INode> _nodes;
         private readonly NodeStatistics _nodeStatistics;
         private readonly IErrorHandler _errorHandler;
         private readonly ConcurrentBag<EtlOperationError> _errors;
 
-        protected INodeWithInput ResultCollector { get; private set; }
-        protected bool HasResult { get; private set; }
+        protected INodeWithInput ResultCollector { get; }
+        protected bool HasResult { get; }
 
-        public EtlProcess()
+        protected internal EtlProcess(IInputOutputAdapter[] ioAdapters)
         {
             _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
-            _ioAdapters = new List<IInputOutputAdapter>();
-            _attachmentDeduplicationList = new List<string>();
-            _nodes = new List<INode>();
+            _ioAdapters = new List<IInputOutputAdapter>(ioAdapters);
+            _nodes = new List<INode>(ioAdapters.Select(x => x.OutputNode).Concat(ioAdapters.SelectMany(x => x.AttachedNodes)).Distinct());
             _nodeStatistics = new NodeStatistics();
             _errors = new ConcurrentBag<EtlOperationError>();
             _errorHandler = new ErrorHandler()
@@ -69,79 +70,23 @@ namespace EtlLib.Pipeline.Operations
                         Debugger.Break();
                 }
             };
-        }
 
-        private void RegisterNode(INode node)
-        {
-            if (_nodes.Contains(node))
-                return;
-
-            node
-                .SetErrorHandler(_errorHandler);
-            _nodes.Add(node);
-            _nodeStatistics.RegisterNode(node);
-        }
-
-        private void RegisterNodes(params INode[] nodes)
-        {
-            foreach(var node in nodes)
-                RegisterNode(node);
-        }
-
-        public void AttachInputToOutput<T>(INodeWithOutput<T> output, INodeWithInput<T> input) 
-            where T : class, INodeOutput<T>, new()
-        {
-            var dedupHash = $"{output.Id}:{input.Id}";
-
-            if (_attachmentDeduplicationList.Contains(dedupHash))
+            foreach (var node in _nodes)
             {
-                _log.Debug($"Node {input} is already attached to output {output}");
-                return;
-            }
+                node.SetErrorHandler(_errorHandler);
+                _nodeStatistics.RegisterNode(node);
 
-            RegisterNodes(input, output);
-
-            if (!(_ioAdapters.SingleOrDefault(x => x.OutputNode.Equals(output)) is InputOutputAdapter<T> ioAdapter))
-            {
-                ioAdapter = new InputOutputAdapter<T>(output, _nodeStatistics);
-
-                output.SetEmitter(ioAdapter);
-
-                _ioAdapters.Add(ioAdapter);
-            }
-
-            if (input is INodeWithInput2<T> input2)
-            {
-                ioAdapter.AttachConsumer(input2);
-
-                if (input2.Input == null)
+                if (node is IResultCollectorNode collector)
                 {
-                    _log.Info($"Attaching {input} input port #1 to output port of {output}.");
-                    input.SetInput(ioAdapter.GetConsumingEnumerable(input));
-                }
-                else if (input2.Input2 == null)
-                {
-                    _log.Info($"Attaching {input} input port #2 to output port of {output}.");
-                    input2.SetInput2(ioAdapter.GetConsumingEnumerable(input2));
+                    HasResult = true;
+                    ResultCollector = collector;
                 }
             }
-            else
+
+            foreach (var adapter in _ioAdapters)
             {
-                ioAdapter.AttachConsumer(input);
-
-                _log.Info($"Attaching {input} input port #1 to output port of {output}.");
-                input.SetInput(ioAdapter.GetConsumingEnumerable(input));
+                adapter.SetNodeStatisticsCollector(_nodeStatistics);
             }
-
-            if (input is GenericResultCollectionNode<T> collector)
-            {
-                HasResult = true;
-                ResultCollector = collector;
-            }
-
-            input.SetWaiter(ioAdapter.Waiter);
-            
-            _attachmentDeduplicationList.Add($"{output.Id}:{input.Id}");
         }
 
         public override IEtlOperationResult Execute(EtlPipelineContext context)

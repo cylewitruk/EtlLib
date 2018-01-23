@@ -55,4 +55,6 @@ namespace EtlLib.Nodes
         where TOut : class, INodeOutput<TOut>, new()
     {
     }
+
+    public interface IResultCollectorNode : INodeWithInput { }
 }
