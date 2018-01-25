@@ -36,6 +36,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.FileCompression", "EtlLib.Nodes.FileCompression\EtlLib.Nodes.FileCompression.csproj", "{774972FA-3CC8-451D-9A01-E3E1F5D69294}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{54E43C5D-DFA1-4866-B891-F3A58EE46B04}"
+	ProjectSection(SolutionItems) = preProject
+		version.json = version.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
