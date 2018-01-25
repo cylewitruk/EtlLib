@@ -59,6 +59,9 @@ namespace EtlLib.Nodes.AmazonS3
 
         public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
+            if ((_awsCredentials == null || _awsCredentials is AnonymousAWSCredentials) && context.Config.ContainsKey(Constants.S3AccessKeyId))
+                _awsCredentials = new BasicAWSCredentials(context.Config[Constants.S3AccessKeyId], context.Config[Constants.S3SecretAccessKey]);
+
             var results = new List<AmazonS3WriterResult>();
             using (var client = new AmazonS3Client(_awsCredentials, _awsRegionEndpoint))
             {

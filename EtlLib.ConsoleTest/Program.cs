@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Amazon;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
@@ -18,8 +19,7 @@ namespace EtlLib.ConsoleTest
     {
         private static void Main(string[] args)
         {
-            var loggingAdapter = new NLogLoggingAdapter();
-            EtlLibConfig.LoggingAdapter = loggingAdapter;
+            EtlLibConfig.LoggingAdapter = new NLogLoggingAdapter();
             EtlLibConfig.EnableDebug = true;
 
             var builder = EtlProcessBuilder.Create()
@@ -45,7 +45,9 @@ namespace EtlLib.ConsoleTest
                     ctx.ObjectPool.Return(row);
                     return newRow;
                 })
-                .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv"))
+                .Continue(ctx => new CsvWriterNode(@"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv")
+                    .IncludeHeader()
+                    .WithEncoding(Encoding.UTF8))
                 .BZip2Files()
                 .CompleteWithResult();
 
@@ -55,19 +57,12 @@ namespace EtlLib.ConsoleTest
 
             var filesToUploadToS3 = new List<IHasFilePath>();
 
-            var pipelineResult = EtlPipeline.Create(cfg =>
-                {
-                    cfg
-                        .Named("Test ETL Process")
-                        //.RegisterObjectPool<Row>(50000)
-                        .WithContextInitializer(ctx =>
-                        {
-                            ctx.Config["s3_bucket_name"] = "***REMOVED***";
-                            ctx.Config["s3_access_key"] = "***REMOVED***";
-                            ctx.Config["s3_secret_access_key"] = "***REMOVED***";
-                            ctx.Config["output_path"] = @"C:\Users\Cyle\Desktop\etl_test\";
-                        });
-                })
+            var pipelineResult = EtlPipeline.Create(cfg => cfg
+                .Named("Test ETL Process")
+                .WithConfig(config => config
+                    .Set("s3_bucket_name", "***REMOVED***")
+                    .SetAmazonS3BasicCredentials("***REMOVED***", "***REMOVED***")
+                    .Set("output_path", @"C:\Users\Cyle\Desktop\etl_test\")))
                 .EnsureDirectoryTreeExists(ctx => ctx.Config["output_path"])
                 .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date.csv")),
                     result => result.AppendResult(filesToUploadToS3))
@@ -76,8 +71,7 @@ namespace EtlLib.ConsoleTest
                 .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date3.csv")),
                     result => result.AppendResult(filesToUploadToS3))
                 .Run(process, result => result.AppendResult(filesToUploadToS3))
-                .Run(ctx => new AmazonS3WriterEtlOperation(***REMOVED***, ctx.Config["s3_bucket_name"], filesToUploadToS3.Select(x => x.FilePath))
-                    .WithBasicCredentials(ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"]), 
+                .Run(ctx => new AmazonS3WriterEtlOperation(***REMOVED***, ctx.Config["s3_bucket_name"], filesToUploadToS3.Select(x => x.FilePath)), 
                     result => result.ForEachResult((ctx, i, item) => Console.WriteLine($"S3 Result: {item.ObjectKey} {item.ETag}"))
                 )
                     /*.Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>
@@ -115,10 +109,6 @@ namespace EtlLib.ConsoleTest
                         );
                     }))*/
                     .Execute();
-
-            foreach(var file in filesToUploadToS3)
-                Console.WriteLine(file.FilePath);
-
 
             Console.WriteLine("\nPress enter to exit...\n");
             Console.ReadLine();

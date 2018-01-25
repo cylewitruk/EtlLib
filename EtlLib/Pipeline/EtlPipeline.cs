@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using EtlLib.Logging;
 using EtlLib.Pipeline.Builders;
@@ -17,6 +18,9 @@ namespace EtlLib.Pipeline
         private readonly ILogger _log;
         private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
+        private bool _throwOnException;
+        private Action<EtlPipelineContext, IEtlOperation, Exception> _onException;
+
         public string Name { get; }
         public EtlPipelineContext Context => _context;
         public IEtlOperationResult LastResult { get; private set; }
@@ -31,6 +35,18 @@ namespace EtlLib.Pipeline
             _executionResults = new Dictionary<IEtlOperation, IEtlOperationResult>();
 
             _settings = settings;
+        }
+
+        private EtlPipeline ThrowOnException()
+        {
+            _throwOnException = true;
+            return this;
+        }
+
+        private EtlPipeline OnException(Action<EtlPipelineContext, IEtlOperation, Exception> err)
+        {
+            _onException = err;
+            return this;
         }
 
         public EtlPipelineResult Execute()
@@ -50,10 +66,24 @@ namespace EtlLib.Pipeline
             for (var i = 0; i < _steps.Count; i++)
             {
                 _log.Info($"Executing step #{i+1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
-                var result = _steps[i].Execute(_context);
-                LastResult = result;
 
-                _executionResults[_steps[i]] = result;
+                try
+                {
+                    _executionResults[_steps[i]]
+                        = LastResult
+                        = _steps[i].Execute(_context);
+                }
+                catch (Exception e)
+                {
+                    if (EtlLibConfig.EnableDebug)
+                        Debugger.Break();
+
+                    _log.Error($"An error occured while executing step #{i+1} '{_steps[i].Name}' ({_steps[i].GetType().Name}): {e}");
+                    _onException?.Invoke(Context, _steps[i], e);
+                    if (_throwOnException)
+                        throw;
+                }
+                
 
                 if (_steps[i] is IDisposable disposable)
                 {
@@ -173,7 +203,10 @@ namespace EtlLib.Pipeline
             var settings = new EtlPipelineSettings();
             cfg(settings);
 
-            var context = new EtlPipelineContext();
+            var config = new EtlPipelineConfig();
+            settings.ConfigInitializer(config);
+
+            var context = new EtlPipelineContext(config);
             settings.ContextInitializer(context);
 
             return new EtlPipeline(settings, context);
