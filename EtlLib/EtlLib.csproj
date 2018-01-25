@@ -17,4 +17,8 @@
     <WarningsAsErrors />
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.16" />
+  </ItemGroup>
+
 </Project>

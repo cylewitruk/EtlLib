@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Amazon;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
@@ -44,13 +47,13 @@ namespace EtlLib.ConsoleTest
                 })
                 .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv"))
                 .BZip2Files()
-                .CompleteWithResult(ctx => new AmazonS3WriterNode(***REMOVED***, "***REMOVED***")
-                    .WithBasicCredentials("***REMOVED***", "***REMOVED***")
-                );
+                .CompleteWithResult();
 
             //builder.PrintGraph();
 
             var process = builder.Build();
+
+            var filesToUploadToS3 = new List<IHasFilePath>();
 
             var pipelineResult = EtlPipeline.Create(cfg =>
                 {
@@ -62,53 +65,59 @@ namespace EtlLib.ConsoleTest
                             ctx.Config["s3_bucket_name"] = "***REMOVED***";
                             ctx.Config["s3_access_key"] = "***REMOVED***";
                             ctx.Config["s3_secret_access_key"] = "***REMOVED***";
-                            ctx.Config["outfile"] = @"C:\Users\Cyle\Desktop\cyle_d_date.csv";
+                            ctx.Config["output_path"] = @"C:\Users\Cyle\Desktop\etl_test\";
                         });
                 })
-                .RunWithResult(process)
-                .ForEachResult((context, i, arg3) =>
-                {
-                    context.State["s3_filename"] = arg3.ObjectKey;
-                    Console.WriteLine($"Setting 's3_filename' to '{arg3.ObjectKey}'");
-                })
-                /*.Run(ctx => new GenerateDateDimensionEtlProcess(
-                    ctx.Config["s3_bucket_name"], ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"], ctx.Config["outfile"]))
-                .Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>
-                {
-                    /*red.Execute(cmd => cmd.Create
-                        .Table("staging_customers", tbl => tbl
-                            .IfNotExists()
-                            .Temporary()
-                            .NoBackup()
-                            .WithColumns(cols =>
-                            {
-                                cols.Add("my_id", t => t.AsInt8())
-                                    .Identity(1, 1)
-                                    .Unique()
-                                    .DistributionKey()
-                                    .Nullable();
+                .EnsureDirectoryTreeExists(ctx => ctx.Config["output_path"])
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date.csv")),
+                    result => result.AppendResult(filesToUploadToS3))
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date2.csv")),
+                    result => result.AppendResult(filesToUploadToS3))
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date3.csv")),
+                    result => result.AppendResult(filesToUploadToS3))
+                .Run(process, result => result.AppendResult(filesToUploadToS3))
+                .Run(ctx => new AmazonS3WriterEtlOperation(***REMOVED***, ctx.Config["s3_bucket_name"], filesToUploadToS3.Select(x => x.FilePath))
+                    .WithBasicCredentials(ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"]), 
+                    result => result.ForEachResult((ctx, i, item) => Console.WriteLine($"S3 Result: {item.ObjectKey} {item.ETag}"))
+                )
+                    /*.Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>
+                    {
+                        red.Execute(cmd => cmd.Create
+                            .Table("staging_customers", tbl => tbl
+                                .IfNotExists()
+                                .Temporary()
+                                .NoBackup()
+                                .WithColumns(cols =>
+                                {
+                                    cols.Add("my_id", t => t.AsInt8())
+                                        .Identity(1, 1)
+                                        .Unique()
+                                        .DistributionKey()
+                                        .Nullable();
+    
+                                    cols.Add("amount", t => t.AsDecimal(8, 2));
+                                })
+                                .SortKey.Interleaved("my_id", "amount")
+                                .PrimaryKey("my_id", "amount")
+                                .UniqueKey("my_id", "amount")
+                            ));
+    
+                        red.Execute(cmd => cmd.Copy
+                            .To("stage.doesntexist")
+                            .From.S3("bucketName", s3 => s3
+                                .UsingObjectPrefix("cyle_d_date.csv.bzip2")
+                                .FileFormat.Csv(csv => csv
+                                    .DelimitedBy(",")
+                                    .QuoteAs("%"))
+                                .CompressedUsing.Bzip2()
+                            )
+                            .AuthorizedBy.AccessKey(ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"])
+                        );
+                    }))*/
+                    .Execute();
 
-                                cols.Add("amount", t => t.AsDecimal(8, 2));
-                            })
-                            .SortKey.Interleaved("my_id", "amount")
-                            .PrimaryKey("my_id", "amount")
-                            .UniqueKey("my_id", "amount")
-                        ));
-
-                    red.Execute(cmd => cmd.Copy
-                        .To("stage.doesntexist")
-                        .From.S3("bucketName", s3 => s3
-                            .UsingObjectPrefix("cyle_d_date.csv.bzip2")
-                            .FileFormat.Csv(csv => csv
-                                .DelimitedBy(",")
-                                .QuoteAs("%"))
-                            .CompressedUsing.Bzip2()
-                        )
-                        .AuthorizedBy.AccessKey(ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"])
-                    );
-                }))*/
-                .Execute();
-
+            foreach(var file in filesToUploadToS3)
+                Console.WriteLine(file.FilePath);
 
 
             Console.WriteLine("\nPress enter to exit...\n");

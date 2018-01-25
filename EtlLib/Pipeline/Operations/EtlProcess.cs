@@ -100,11 +100,11 @@ namespace EtlLib.Pipeline.Operations
             var tasks = new List<Task>();
             var processStopwatch = Stopwatch.StartNew();
 
-
             foreach (var node in _nodes)
             {
-                var task = Task.Run(() =>
-                    {
+                var task = Task.Factory.StartNew(() =>
+                //var task = Task.Run(() =>
+                {
                         _log.Info($"Beginning execute task for node {node}.");
                         var sw = Stopwatch.StartNew();
 

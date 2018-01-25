@@ -18,6 +18,7 @@ namespace EtlLib.Pipeline
         private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
         public string Name { get; }
+        public EtlPipelineContext Context => _context;
         public IEtlOperationResult LastResult { get; private set; }
 
         private EtlPipeline(EtlPipelineSettings settings, EtlPipelineContext context)
@@ -48,7 +49,7 @@ namespace EtlLib.Pipeline
 
             for (var i = 0; i < _steps.Count; i++)
             {
-                _log.Info($"Executing step #{i} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
+                _log.Info($"Executing step #{i+1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
                 var result = _steps[i].Execute(_context);
                 LastResult = result;
 
@@ -60,7 +61,7 @@ namespace EtlLib.Pipeline
                     disposable.Dispose();
                 }
 
-                _log.Debug("Performing garbage collection of all generations.");
+                _log.Debug("Cleaning up (globally).");
                 GC.Collect();
             }
 
@@ -108,6 +109,29 @@ namespace EtlLib.Pipeline
         public IEtlPipelineEnumerableResultContext<TOut> RunWithResult<TOut>(IEtlOperationWithEnumerableResult<TOut> operation)
         {
             return RegisterOperation(operation);
+        }
+
+        public IEtlPipeline Run<TOut>(
+            Func<EtlPipelineContext, IEtlOperationWithEnumerableResult<TOut>> ctx,
+            Action<IEtlPipelineEnumerableResultContext<TOut>> result)
+        {
+            var op = ctx(_context);
+            var ret = RegisterOperation(op);
+            result(ret);
+            return this;
+        }
+
+        public IEtlPipeline Run<TOut>(IEtlOperationWithEnumerableResult<TOut> operation, Action<IEtlPipelineEnumerableResultContext<TOut>> result)
+        {
+            var ret = RegisterOperation(operation);
+            result(ret);
+            return this;
+        }
+
+        public IEtlPipelineEnumerableResultContext<TOut> RunWithResult<TOut>(
+            Func<EtlPipelineContext, IEtlOperationWithEnumerableResult<TOut>> operation)
+        {
+            return RegisterOperation(operation(_context));
         }
 
         public IEtlPipelineWithScalarResultContext<TOut> RunWithResult<TOut>(IEtlOperationWithScalarResult<TOut> operation)
@@ -158,6 +182,8 @@ namespace EtlLib.Pipeline
 
     public interface IEtlPipelineWithScalarResultContext<out TOut>
     {
+        IEtlPipeline Pipeline { get; }
+
         IEtlPipeline SaveResult(string stateKeyName);
         IEtlPipeline WithResult(Action<EtlPipelineContext, TOut> result);
     }
@@ -166,6 +192,8 @@ namespace EtlLib.Pipeline
     {
         private readonly EtlPipeline _parentPipeline;
         private readonly EtlPipelineContext _context;
+
+        public IEtlPipeline Pipeline => _parentPipeline;
 
         public EtlPipelineWithScalarResultContext(EtlPipeline pipeline, EtlPipelineContext context)
         {
@@ -198,6 +226,8 @@ namespace EtlLib.Pipeline
 
     public interface IEtlPipelineEnumerableResultContext<out TOut>
     {
+        IEtlPipeline Pipeline { get; }
+
         IEtlPipeline SaveResult(string stateKeyName);
         IEtlPipeline WithResult(Action<EtlPipelineContext, IEnumerable<TOut>> result);
         IEtlPipeline ForEachResult(Action<EtlPipelineContext, int, TOut> result);
@@ -207,6 +237,8 @@ namespace EtlLib.Pipeline
     {
         private readonly EtlPipeline _parentPipeline;
         private readonly EtlPipelineContext _context;
+
+        public IEtlPipeline Pipeline => _parentPipeline;
 
         public EtlPipelineEnumerableResultContext(EtlPipeline pipeline, EtlPipelineContext context)
         {
