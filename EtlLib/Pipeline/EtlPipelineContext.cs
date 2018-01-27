@@ -15,7 +15,7 @@ namespace EtlLib.Pipeline
 
         internal IDictionary<INode, Exception> Errors { get; }
 
-        public EtlPipelineContext(EtlPipelineConfig config)
+        public EtlPipelineContext(IEtlPipelineConfig config)
         {
             State = new ConcurrentDictionary<string, object>();
             Errors = new ConcurrentDictionary<INode, Exception>();

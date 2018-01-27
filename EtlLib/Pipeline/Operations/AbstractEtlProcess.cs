@@ -37,9 +37,9 @@ namespace EtlLib.Pipeline.Operations
             Named(_etlProcess.Name);
         }
 
-        public override IEtlOperationResult Execute(EtlPipelineContext context)
+        public override IEnumerableEtlOperationResult<T> ExecuteWithResult(EtlPipelineContext context)
         {
-            return _etlProcess.Execute(context);
+            return _etlProcess.ExecuteWithResult(context);
         }
     }
 }

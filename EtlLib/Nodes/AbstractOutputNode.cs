@@ -7,23 +7,24 @@ namespace EtlLib.Nodes
     public abstract class AbstractOutputNode<TOut> : AbstractNode, INodeWithOutput<TOut>
         where TOut : class, INodeOutput<TOut>, new()
     {
-        public IEmitter<TOut> Emitter { get; private set; }
+        public IEmitter<TOut> TypedEmitter { get; private set; }
+        public IEmitter Emitter => TypedEmitter;
         public Type OutputType => typeof(TOut);
 
         public INodeWithOutput<TOut> SetEmitter(IEmitter<TOut> emitter)
         {
-            Emitter = emitter;
+            TypedEmitter = emitter;
             return this;
         }
 
         protected void Emit(TOut item)
         {
-            Emitter?.Emit(item);
+            TypedEmitter?.Emit(item);
         }
 
         protected void SignalEnd()
         {
-            Emitter?.SignalEnd();
+            TypedEmitter?.SignalEnd();
         }
     }
 }

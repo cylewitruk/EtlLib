@@ -14,14 +14,15 @@ namespace EtlLib.UnitTests
         public INodeWaiter Waiter { get; private set; }
         public IErrorHandler ErrorHandler { get; private set; }
         public Type OutputType => typeof(Row);
-        public IEmitter<Row> Emitter { get; private set; }
+        public IEmitter<Row> TypedEmitter { get; private set; }
+        public IEmitter Emitter => TypedEmitter;
 
         public TestOutputNode(Action<EtlPipelineContext, IEmitter<Row>> action)
         {
             _action = action;
             Id = Guid.NewGuid();
             Waiter = NoWaitNodeWaiter.Instance;
-            Emitter = new TestEmitter<Row>();
+            TypedEmitter = new TestEmitter<Row>();
             ErrorHandler = new TestErrorHandler();
         }
 
@@ -45,13 +46,13 @@ namespace EtlLib.UnitTests
 
         public INodeWithOutput<Row> SetEmitter(IEmitter<Row> emitter)
         {
-            Emitter = emitter;
+            TypedEmitter = emitter;
             return this;
         }
 
         public void Execute(EtlPipelineContext context)
         {
-            _action(context, Emitter);
+            _action(context, TypedEmitter);
         }
     }
 }

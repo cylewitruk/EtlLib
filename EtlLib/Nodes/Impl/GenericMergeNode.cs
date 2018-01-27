@@ -51,7 +51,7 @@ namespace EtlLib.Nodes.Impl
                     input2HasItems = input2Enumerator.MoveNext();
                 }
 
-                Emitter.SignalEnd();
+                TypedEmitter.SignalEnd();
             }
         }
     }

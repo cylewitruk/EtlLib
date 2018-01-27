@@ -8,23 +8,18 @@ using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Nodes.AmazonS3
 {
-    public interface IAmazonS3WriterConfiguration
-    {
-        IAmazonS3WriterConfiguration WithAnonymousCredentials();
-        IAmazonS3WriterConfiguration WithBasicCredentials(string accessKey, string secretKey);
-        IAmazonS3WriterConfiguration WithEnvironmentVariableCredentials();
-    }
-
     public class AmazonS3WriterEtlOperation : AbstractEtlOperationWithEnumerableResult<AmazonS3WriterResult>, IAmazonS3WriterConfiguration
     {
         private readonly string _bucketName;
         private AWSCredentials _awsCredentials;
         private readonly Amazon.RegionEndpoint _awsRegionEndpoint;
         private readonly IEnumerable<string> _files;
+        private S3StorageClass _storageClass;
 
         public AmazonS3WriterEtlOperation(Amazon.RegionEndpoint regionEndpoint, string bucketName, IEnumerable<string> files)
         {
             _awsCredentials = new AnonymousAWSCredentials();
+            _storageClass = S3StorageClass.Standard;
             _awsRegionEndpoint = regionEndpoint;
             _bucketName = bucketName;
             _files = files;
@@ -48,6 +43,12 @@ namespace EtlLib.Nodes.AmazonS3
             return this;
         }
 
+        public AmazonS3WriterEtlOperation WithStorageClass(S3StorageClass storageClass)
+        {
+            _storageClass = storageClass;
+            return this;
+        }
+
         IAmazonS3WriterConfiguration IAmazonS3WriterConfiguration.WithAnonymousCredentials() =>
             WithAnonymousCredentials();
 
@@ -57,7 +58,10 @@ namespace EtlLib.Nodes.AmazonS3
         IAmazonS3WriterConfiguration IAmazonS3WriterConfiguration.WithEnvironmentVariableCredentials() =>
             WithEnvironmentVariableCredentials();
 
-        public override IEtlOperationResult Execute(EtlPipelineContext context)
+        IAmazonS3WriterConfiguration IAmazonS3WriterConfiguration.WithStorageClass(S3StorageClass storageClass) =>
+            WithStorageClass(storageClass);
+
+        public override IEnumerableEtlOperationResult<AmazonS3WriterResult> ExecuteWithResult(EtlPipelineContext context)
         {
             if ((_awsCredentials == null || _awsCredentials is AnonymousAWSCredentials) && context.Config.ContainsKey(Constants.S3AccessKeyId))
                 _awsCredentials = new BasicAWSCredentials(context.Config[Constants.S3AccessKeyId], context.Config[Constants.S3SecretAccessKey]);
@@ -74,7 +78,8 @@ namespace EtlLib.Nodes.AmazonS3
 
                         BucketName = _bucketName,
                         Key = objectKey,
-                        FilePath = file
+                        FilePath = file,
+                        StorageClass = _storageClass
                     };
 
                     var result = client.PutObjectAsync(request).GetAwaiter().GetResult();

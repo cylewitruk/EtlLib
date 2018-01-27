@@ -13,6 +13,7 @@ namespace EtlLib.Pipeline
         public List<ObjectPoolSettings> ObjectPoolRegistrations { get; }
         public bool ThrowOnError { get; set; }
         public Action<EtlPipelineContext, IEtlOperation, Exception> OnError { get; set; }
+        public EtlPipelineContext ExistingContext { get; set; }
 
         public EtlPipelineSettings()
         {
@@ -54,6 +55,12 @@ namespace EtlLib.Pipeline
         public EtlPipelineSettings OnException(Action<EtlPipelineContext, IEtlOperation, Exception> err)
         {
             OnError = err;
+            return this;
+        }
+
+        public EtlPipelineSettings UseExistingContext(EtlPipelineContext context)
+        {
+            ExistingContext = context;
             return this;
         }
     }

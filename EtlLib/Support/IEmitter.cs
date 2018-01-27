@@ -2,10 +2,14 @@
 
 namespace EtlLib.Support
 {
-    public interface IEmitter<in T> 
+    public interface IEmitter
+    {
+        void SignalEnd();
+    }
+
+    public interface IEmitter<in T>  : IEmitter
         where T : class, INodeOutput<T>, new()
     {
         void Emit(T item);
-        void SignalEnd();
     }
 }

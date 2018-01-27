@@ -206,7 +206,7 @@ namespace EtlLib.Pipeline
             var config = new EtlPipelineConfig();
             settings.ConfigInitializer(config);
 
-            var context = new EtlPipelineContext(config);
+            var context = settings.ExistingContext ?? new EtlPipelineContext(config);
             settings.ContextInitializer(context);
 
             return new EtlPipeline(settings, context);

@@ -75,7 +75,7 @@ namespace EtlLib.Nodes.SqlServer
                 }
             }
 
-            Emitter.SignalEnd();
+            TypedEmitter.SignalEnd();
         }
     }
 }

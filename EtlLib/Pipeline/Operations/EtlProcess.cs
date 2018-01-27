@@ -20,14 +20,16 @@ namespace EtlLib.Pipeline.Operations
         {
         }
 
-        public override IEtlOperationResult Execute(EtlPipelineContext context)
+        public IEnumerableEtlOperationResult<TOut> ExecuteWithResult(EtlPipelineContext context)
         {
             var baseResult = base.Execute(context);
 
-            var collector = (GenericResultCollectionNode<TOut>) ResultCollector;
+            var collector = (GenericResultCollectionNode<TOut>)ResultCollector;
             var result = new EnumerableEtlOperationResult<TOut>(baseResult.IsSuccess, collector.Result);
             return result;
         }
+
+        public override IEtlOperationResult Execute(EtlPipelineContext context) => ExecuteWithResult(context);
     }
     
     internal class EtlProcess : AbstractEtlOperationWithNoResult, IDisposable

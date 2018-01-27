@@ -34,11 +34,11 @@ namespace EtlLib.Pipeline.Builders
         private IInputOutputAdapter _last;
         private readonly List<IInputOutputAdapter> _ioAdapters;
 
-        private EtlProcessBuilder()
+        private EtlProcessBuilder(EtlPipelineContext context)
         {
             Id = Guid.NewGuid();
             Name = "Unnamed (" + Id + ")";
-            Context = new EtlPipelineContext();
+            Context = context;
             Log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.EtlProcessBuilder");
 
             _ioAdapters = new List<IInputOutputAdapter>();
@@ -46,7 +46,14 @@ namespace EtlLib.Pipeline.Builders
 
         public static IEtlProcessBuilder Create()
         {
-            var builder = new EtlProcessBuilder();
+            var builder = new EtlProcessBuilder(new EtlPipelineContext());
+            builder.Log.Debug($"Created new EtlProcessBuilder '{builder.Name}'");
+            return builder;
+        }
+
+        public static IEtlProcessBuilder Create(EtlPipelineContext context)
+        {
+            var builder = new EtlProcessBuilder(context);
             builder.Log.Debug($"Created new EtlProcessBuilder '{builder.Name}'");
             return builder;
         }

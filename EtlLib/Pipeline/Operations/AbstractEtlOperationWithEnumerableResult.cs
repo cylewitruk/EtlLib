@@ -10,6 +10,8 @@
             return this;
         }
 
-        public abstract IEtlOperationResult Execute(EtlPipelineContext context);
+        public IEtlOperationResult Execute(EtlPipelineContext context) => ExecuteWithResult(context);
+
+        public abstract IEnumerableEtlOperationResult<TOut> ExecuteWithResult(EtlPipelineContext context);
     }
 }

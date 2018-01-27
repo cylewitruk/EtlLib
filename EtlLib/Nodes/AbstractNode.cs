@@ -50,6 +50,9 @@ namespace EtlLib.Nodes
             catch (Exception e)
             {
                 RaiseError(e);
+
+                if (this is INodeWithOutput output)
+                    output.Emitter.SignalEnd();
             }
         }
 

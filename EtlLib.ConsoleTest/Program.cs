@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Amazon;
+using Amazon.S3;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
 using EtlLib.Nodes.AmazonS3;
@@ -22,7 +23,14 @@ namespace EtlLib.ConsoleTest
             EtlLibConfig.LoggingAdapter = new NLogLoggingAdapter();
             EtlLibConfig.EnableDebug = true;
 
-            var builder = EtlProcessBuilder.Create()
+            var config = new EtlPipelineConfig()
+                .Set("s3_bucket_name", "***REMOVED***")
+                .SetAmazonS3BasicCredentials("***REMOVED***", "***REMOVED***")
+                .Set("output_dir", @"C:\Users\Cyle\Desktop\etl_test\");
+
+            var context = new EtlPipelineContext(config);
+
+            var builder = EtlProcessBuilder.Create(context)
                 .Input(ctx => new CsvReaderNode(@"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
                 .GenerateRowNumbers("_id")
                 .Classify("income_segment", cat =>
@@ -45,7 +53,7 @@ namespace EtlLib.ConsoleTest
                     ctx.ObjectPool.Return(row);
                     return newRow;
                 })
-                .Continue(ctx => new CsvWriterNode(@"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv")
+                .Continue(ctx => new CsvWriterNode(Path.Combine(ctx.Config["output_dir"], "LoanStats3a_TRANSFORMED.csv"))
                     .IncludeHeader()
                     .WithEncoding(Encoding.UTF8))
                 .BZip2Files()
@@ -59,19 +67,17 @@ namespace EtlLib.ConsoleTest
 
             var pipelineResult = EtlPipeline.Create(cfg => cfg
                 .Named("Test ETL Process")
-                .WithConfig(config => config
-                    .Set("s3_bucket_name", "***REMOVED***")
-                    .SetAmazonS3BasicCredentials("***REMOVED***", "***REMOVED***")
-                    .Set("output_path", @"C:\Users\Cyle\Desktop\etl_test\")))
-                .EnsureDirectoryTreeExists(ctx => ctx.Config["output_path"])
-                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date.csv")),
+                .UseExistingContext(context))
+                .EnsureDirectoryTreeExists(ctx => ctx.Config["output_dir"])
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_dir"], "cyle_d_date.csv")),
                     result => result.AppendResult(filesToUploadToS3))
-                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date2.csv")),
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_dir"], "cyle_d_date2.csv")),
                     result => result.AppendResult(filesToUploadToS3))
-                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_path"], "cyle_d_date3.csv")),
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_dir"], "cyle_d_date3.csv")),
                     result => result.AppendResult(filesToUploadToS3))
                 .Run(process, result => result.AppendResult(filesToUploadToS3))
-                .Run(ctx => new AmazonS3WriterEtlOperation(***REMOVED***, ctx.Config["s3_bucket_name"], filesToUploadToS3.Select(x => x.FilePath)), 
+                .Run(ctx => new AmazonS3WriterEtlOperation(***REMOVED***, ctx.Config["s3_bucket_name"], filesToUploadToS3.Select(x => x.FilePath))
+                        .WithStorageClass(S3StorageClass.ReducedRedundancy), 
                     result => result.ForEachResult((ctx, i, item) => Console.WriteLine($"S3 Result: {item.ObjectKey} {item.ETag}"))
                 )
                     /*.Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>
