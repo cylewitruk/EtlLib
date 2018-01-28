@@ -74,7 +74,7 @@ namespace EtlLib.Nodes.PostgreSQL
                 }
             }
 
-            Emitter.SignalEnd();
+            TypedEmitter.SignalEnd();
         }
     }
 }

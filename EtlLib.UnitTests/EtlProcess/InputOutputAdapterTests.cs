@@ -23,14 +23,13 @@ namespace EtlLib.UnitTests.EtlProcess
 
             var inputNode = new TestInputNode();
             var nodeStatistics = new NodeStatistics();
-
-            var ioAdapter = new InputOutputAdapter<Row>(outputNode, nodeStatistics);
-
-            outputNode.SetEmitter(ioAdapter);
-            ioAdapter.AttachConsumer(inputNode);
-            inputNode.SetInput(ioAdapter.GetConsumingEnumerable(inputNode));
-            nodeStatistics.RegisterNode(inputNode);
             nodeStatistics.RegisterNode(outputNode);
+            nodeStatistics.RegisterNode(inputNode);
+
+            var ioAdapter = new InputOutputAdapter<Row>(outputNode);
+            ioAdapter.SetNodeStatisticsCollector(nodeStatistics);
+            
+            ioAdapter.AttachConsumer(inputNode);
 
             var context = new EtlPipelineContext();
 

@@ -78,7 +78,7 @@ namespace EtlLib.Nodes.Impl
                 }
             }
 
-            Emitter.SignalEnd();
+            TypedEmitter.SignalEnd();
         }
 
         private void SetValue(T item, TClass value)

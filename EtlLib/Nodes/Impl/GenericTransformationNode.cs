@@ -25,7 +25,7 @@ namespace EtlLib.Nodes.Impl
                 Emit(_transform(_stateDictionary, item));
             }
 
-            Emitter.SignalEnd();
+            TypedEmitter.SignalEnd();
         }
     }
 
@@ -49,7 +49,7 @@ namespace EtlLib.Nodes.Impl
                 Emit(_transform(_state, item));
             }
 
-            Emitter.SignalEnd();
+            TypedEmitter.SignalEnd();
         }
     }
 }

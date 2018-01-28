@@ -3,7 +3,6 @@ using EtlLib.Data;
 using EtlLib.Logging;
 using EtlLib.Nodes;
 using EtlLib.Nodes.Impl;
-using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline.Builders
 {
@@ -11,10 +10,6 @@ namespace EtlLib.Pipeline.Builders
         where TIn : class, INodeOutput<TIn>, new()
     {
         IOutputNodeBuilderContext<TOut> Continue<TOut>(Func<EtlPipelineContext, INodeWithInputOutput<TIn, TOut>> ctx)
-            where TOut : class, INodeOutput<TOut>, new();
-
-        IBranchedNodeBuilderContext<TOut> Branch<TOut>(Func<EtlPipelineContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch1,
-            Func<EtlPipelineContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch2)
             where TOut : class, INodeOutput<TOut>, new();
 
         IEtlProcessCompletedBuilderContext Complete(Func<EtlPipelineContext, INodeWithInput<TIn>> ctx);
@@ -45,46 +40,17 @@ namespace EtlLib.Pipeline.Builders
         {
             var node = ctx(_parentBuilder.Context);
 
-            _parentBuilder.RegisterNode(node, (current, last) =>
-            {
-                // ALL OF THIS NEEDS TO BE REWORKED
-                current.AddSourceNode((INodeWithOutput)last.ThisNode);
-                last.AddTargetNode(node);
-
-                _log.Debug($"'{_parentBuilder.Name}' registered new continue {node}");
-                _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {node}");
-            });
+            _parentBuilder.RegisterInputOutputNode(node);
 
             return new OutputNodeBuilderContext<TOut>(_parentBuilder, node);
-        }
-
-        public IBranchedNodeBuilderContext<TOut> Branch<TOut>(
-            Func<EtlPipelineContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch1, 
-            Func<EtlPipelineContext, IOutputNodeBuilderContext<TIn>, IOutputNodeBuilderContext<TOut>> branch2) 
-            where TOut : class, INodeOutput<TOut>, new()
-        {
-            var subProcess1 = _parentBuilder.RegisterSubProcess(CreatingNode);
-            var subProcess2 = _parentBuilder.RegisterSubProcess(CreatingNode);
-
-            // Looks like we need to create subprocesses here
-            var output1 = branch1(_parentBuilder.Context, new OutputNodeBuilderContext<TIn>(subProcess1, CreatingNode));
-            var output2 = branch2(_parentBuilder.Context, new OutputNodeBuilderContext<TIn>(subProcess2, CreatingNode));
-
-            return new BranchedNodeBuilderContext<TOut>(_parentBuilder, subProcess1, subProcess2, CreatingNode);
         }
 
         public IEtlProcessCompletedBuilderContext Complete(Func<EtlPipelineContext, INodeWithInput<TIn>> ctx)
         {
             var node = ctx(_parentBuilder.Context);
 
-            _parentBuilder.RegisterNode(node, (current, last) =>
-            {
-                current.AddSourceNode((INodeWithOutput)last.ThisNode);
-                last.AddTargetNode(node);
-
-                _log.Debug($"'{_parentBuilder.Name}' registered new completion without result {node}");
-                _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {node}");
-            });
+            _parentBuilder.AttachNodeToOutput(node);
+            _parentBuilder.ClearLastOutputAdapter();
 
             return new EtlProcessCompletedBuilderContext(_parentBuilder);
         }
@@ -94,23 +60,11 @@ namespace EtlLib.Pipeline.Builders
         {
             var node = ctx(_parentBuilder.Context);
 
-            _parentBuilder.RegisterNode(node, (current, last) =>
-            {
-                current.AddSourceNode((INodeWithOutput) last.ThisNode);
-                last.AddTargetNode(node);
+            _log.Debug($"'{_parentBuilder.Name}' registered new completion with result {node}");
 
-                _log.Debug($"'{_parentBuilder.Name}' registered new completion with result {node}");
-                _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {node}");
-            });
-
+            _parentBuilder.RegisterInputOutputNode(node);
             var resultCollectionNode = new GenericResultCollectionNode<TOut>();
-            _parentBuilder.RegisterNode(resultCollectionNode, (current, last) =>
-                {
-                    current.AddSourceNode((INodeWithOutput) last.ThisNode);
-                    last.AddTargetNode(resultCollectionNode);
-
-                    _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {resultCollectionNode}");
-                });
+            _parentBuilder.AttachNodeToOutput(resultCollectionNode);
 
             return new EtlProcessCompletedWithResultBuilderContext<TOut>(_parentBuilder, resultCollectionNode.Result);
         }
@@ -118,13 +72,7 @@ namespace EtlLib.Pipeline.Builders
         public IEtlProcessCompletedWithResultBuilderContext<TIn> CompleteWithResult()
         {
             var resultCollectionNode = new GenericResultCollectionNode<TIn>();
-            _parentBuilder.RegisterNode(resultCollectionNode, (current, last) =>
-            {
-                current.AddSourceNode((INodeWithOutput)last.ThisNode);
-                last.AddTargetNode(resultCollectionNode);
-
-                _log.Debug($"'{_parentBuilder.Name}' registered [output from] {last.ThisNode} as [input to] target -> {resultCollectionNode}");
-            });
+            _parentBuilder.AttachNodeToOutput(resultCollectionNode);
 
             return new EtlProcessCompletedWithResultBuilderContext<TIn>(_parentBuilder, resultCollectionNode.Result);
         }

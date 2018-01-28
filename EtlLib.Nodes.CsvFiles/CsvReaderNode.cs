@@ -34,7 +34,7 @@ namespace EtlLib.Nodes.CsvFiles
                     //Emit(Row.FromArray(reader.Context.HeaderRecord, reader.Context.Record));
                 }
 
-                Emitter.SignalEnd();
+                TypedEmitter.SignalEnd();
             }
         }
     }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -8,37 +7,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.AmazonS3
 {
-    public class AmazonS3WriterNodeResult : Frozen<AmazonS3WriterNodeResult>, INodeOutput<AmazonS3WriterNodeResult>
-    {
-        public string ObjectKey { get; private set; }
-        public string ETag { get; private set; }
-        public DateTime? Expiration { get; private set; }
-
-        public AmazonS3WriterNodeResult() { }
-
-        public AmazonS3WriterNodeResult(string objectKey, PutObjectResponse result)
-        {
-            ObjectKey = objectKey;
-            ETag = result.ETag;
-            Expiration = result.Expiration?.ExpiryDate;
-        }
-
-        public void Reset()
-        {
-            ObjectKey = null;
-            ETag = null;
-            Expiration = null;
-        }
-
-        public void CopyTo(AmazonS3WriterNodeResult obj)
-        {
-            obj.ObjectKey = ObjectKey;
-            obj.ETag = ETag;
-            obj.Expiration = Expiration;
-        }
-    }
-
-    public class AmazonS3WriterNode : AbstractInputOutputNode<NodeOutputWithFilePath, AmazonS3WriterNodeResult>
+    public class AmazonS3WriterNode : AbstractInputOutputNode<NodeOutputWithFilePath, AmazonS3WriterResult>
     {
         private readonly string _bucketName;
         private AWSCredentials _awsCredentials;
@@ -87,7 +56,7 @@ namespace EtlLib.Nodes.AmazonS3
 
                     var result = client.PutObjectAsync(request).GetAwaiter().GetResult();
 
-                    Emit(new AmazonS3WriterNodeResult(objectKey, result));
+                    Emit(new AmazonS3WriterResult(objectKey, result));
                 }
             }
 

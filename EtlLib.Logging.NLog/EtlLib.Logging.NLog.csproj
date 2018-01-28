@@ -5,7 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NLog" Version="4.5.0-rc03" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.16" PrivateAssets="all" />
+    <PackageReference Include="NLog" Version="4.5.0-rc04" />
   </ItemGroup>
 
   <ItemGroup>

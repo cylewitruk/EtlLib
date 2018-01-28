@@ -40,12 +40,13 @@ namespace EtlLib.Nodes
     public interface INodeWithOutput : INode
     {
         Type OutputType { get; }
+        IEmitter Emitter { get; }
     }
 
     public interface INodeWithOutput<TOut> : INodeWithOutput
         where TOut : class, INodeOutput<TOut>, new()
     {
-        IEmitter<TOut> Emitter { get; }
+        IEmitter<TOut> TypedEmitter { get; }
 
         INodeWithOutput<TOut> SetEmitter(IEmitter<TOut> emitter);
     }
@@ -55,4 +56,6 @@ namespace EtlLib.Nodes
         where TOut : class, INodeOutput<TOut>, new()
     {
     }
+
+    public interface IResultCollectorNode : INodeWithInput { }
 }

@@ -5,7 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="6.1.0" />
+    <PackageReference Include="CsvHelper" Version="6.1.1" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.16" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
-using Amazon;
 using EtlLib.Data;
-using EtlLib.Nodes.AmazonS3;
 using EtlLib.Nodes.CsvFiles;
 using EtlLib.Nodes.FileCompression;
-using EtlLib.Pipeline.Builders;
 using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.ConsoleTest
 {
-    public class GenerateDateDimensionEtlProcess : AbstractEtlProcess
+    public class GenerateDateDimensionEtlProcess : AbstractEtlProcess<NodeOutputWithFilePath>
     {
         private static readonly Calendar Calendar;
 
@@ -20,7 +17,7 @@ namespace EtlLib.ConsoleTest
             Calendar = new GregorianCalendar();
         }
 
-        public GenerateDateDimensionEtlProcess(string s3BucketName, string s3AccessKeyId, string s3AccessKeySecret, string outputFilePath)
+        public GenerateDateDimensionEtlProcess(string outputFilePath)
         {
             var startDate = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss",
                 CultureInfo.InvariantCulture);
@@ -52,9 +49,7 @@ namespace EtlLib.ConsoleTest
                         .CompressionLevel(9)
                         .Parallelize(2)
                         .FileSuffix(".bzip2"))
-                    .Continue(ctx => new AmazonS3WriterNode(***REMOVED***, s3BucketName)
-                        .WithBasicCredentials(s3AccessKeyId, s3AccessKeySecret)
-                    );
+                    .CompleteWithResult();
             });
         }
 

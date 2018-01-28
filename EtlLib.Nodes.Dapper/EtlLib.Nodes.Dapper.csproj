@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="1.50.4" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.16" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

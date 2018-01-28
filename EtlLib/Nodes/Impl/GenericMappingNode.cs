@@ -24,7 +24,7 @@ namespace EtlLib.Nodes.Impl
                 context.ObjectPool.Return(item);
             }
 
-            Emitter.SignalEnd();
+            TypedEmitter.SignalEnd();
         }
     }
 }

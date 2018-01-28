@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using EtlLib.Logging;
 using EtlLib.Pipeline.Builders;
@@ -17,7 +18,11 @@ namespace EtlLib.Pipeline
         private readonly ILogger _log;
         private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
+        private bool _throwOnException;
+        private Action<EtlPipelineContext, IEtlOperation, Exception> _onException;
+
         public string Name { get; }
+        public EtlPipelineContext Context => _context;
         public IEtlOperationResult LastResult { get; private set; }
 
         private EtlPipeline(EtlPipelineSettings settings, EtlPipelineContext context)
@@ -30,6 +35,18 @@ namespace EtlLib.Pipeline
             _executionResults = new Dictionary<IEtlOperation, IEtlOperationResult>();
 
             _settings = settings;
+        }
+
+        private EtlPipeline ThrowOnException()
+        {
+            _throwOnException = true;
+            return this;
+        }
+
+        private EtlPipeline OnException(Action<EtlPipelineContext, IEtlOperation, Exception> err)
+        {
+            _onException = err;
+            return this;
         }
 
         public EtlPipelineResult Execute()
@@ -48,11 +65,25 @@ namespace EtlLib.Pipeline
 
             for (var i = 0; i < _steps.Count; i++)
             {
-                _log.Info($"Executing step #{i} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
-                var result = _steps[i].Execute(_context);
-                LastResult = result;
+                _log.Info($"Executing step #{i+1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
 
-                _executionResults[_steps[i]] = result;
+                try
+                {
+                    _executionResults[_steps[i]]
+                        = LastResult
+                        = _steps[i].Execute(_context);
+                }
+                catch (Exception e)
+                {
+                    if (EtlLibConfig.EnableDebug)
+                        Debugger.Break();
+
+                    _log.Error($"An error occured while executing step #{i+1} '{_steps[i].Name}' ({_steps[i].GetType().Name}): {e}");
+                    _onException?.Invoke(Context, _steps[i], e);
+                    if (_throwOnException)
+                        throw;
+                }
+                
 
                 if (_steps[i] is IDisposable disposable)
                 {
@@ -60,7 +91,7 @@ namespace EtlLib.Pipeline
                     disposable.Dispose();
                 }
 
-                _log.Debug("Performing garbage collection of all generations.");
+                _log.Debug("Cleaning up (globally).");
                 GC.Collect();
             }
 
@@ -110,6 +141,29 @@ namespace EtlLib.Pipeline
             return RegisterOperation(operation);
         }
 
+        public IEtlPipeline Run<TOut>(
+            Func<EtlPipelineContext, IEtlOperationWithEnumerableResult<TOut>> ctx,
+            Action<IEtlPipelineEnumerableResultContext<TOut>> result)
+        {
+            var op = ctx(_context);
+            var ret = RegisterOperation(op);
+            result(ret);
+            return this;
+        }
+
+        public IEtlPipeline Run<TOut>(IEtlOperationWithEnumerableResult<TOut> operation, Action<IEtlPipelineEnumerableResultContext<TOut>> result)
+        {
+            var ret = RegisterOperation(operation);
+            result(ret);
+            return this;
+        }
+
+        public IEtlPipelineEnumerableResultContext<TOut> RunWithResult<TOut>(
+            Func<EtlPipelineContext, IEtlOperationWithEnumerableResult<TOut>> operation)
+        {
+            return RegisterOperation(operation(_context));
+        }
+
         public IEtlPipelineWithScalarResultContext<TOut> RunWithResult<TOut>(IEtlOperationWithScalarResult<TOut> operation)
         {
             return RegisterOperation(operation);
@@ -149,7 +203,10 @@ namespace EtlLib.Pipeline
             var settings = new EtlPipelineSettings();
             cfg(settings);
 
-            var context = new EtlPipelineContext();
+            var config = new EtlPipelineConfig();
+            settings.ConfigInitializer(config);
+
+            var context = settings.ExistingContext ?? new EtlPipelineContext(config);
             settings.ContextInitializer(context);
 
             return new EtlPipeline(settings, context);
@@ -158,6 +215,8 @@ namespace EtlLib.Pipeline
 
     public interface IEtlPipelineWithScalarResultContext<out TOut>
     {
+        IEtlPipeline Pipeline { get; }
+
         IEtlPipeline SaveResult(string stateKeyName);
         IEtlPipeline WithResult(Action<EtlPipelineContext, TOut> result);
     }
@@ -166,6 +225,8 @@ namespace EtlLib.Pipeline
     {
         private readonly EtlPipeline _parentPipeline;
         private readonly EtlPipelineContext _context;
+
+        public IEtlPipeline Pipeline => _parentPipeline;
 
         public EtlPipelineWithScalarResultContext(EtlPipeline pipeline, EtlPipelineContext context)
         {
@@ -198,6 +259,8 @@ namespace EtlLib.Pipeline
 
     public interface IEtlPipelineEnumerableResultContext<out TOut>
     {
+        IEtlPipeline Pipeline { get; }
+
         IEtlPipeline SaveResult(string stateKeyName);
         IEtlPipeline WithResult(Action<EtlPipelineContext, IEnumerable<TOut>> result);
         IEtlPipeline ForEachResult(Action<EtlPipelineContext, int, TOut> result);
@@ -207,6 +270,8 @@ namespace EtlLib.Pipeline
     {
         private readonly EtlPipeline _parentPipeline;
         private readonly EtlPipelineContext _context;
+
+        public IEtlPipeline Pipeline => _parentPipeline;
 
         public EtlPipelineEnumerableResultContext(EtlPipeline pipeline, EtlPipelineContext context)
         {

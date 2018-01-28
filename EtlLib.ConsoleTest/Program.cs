@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Amazon;
+using Amazon.S3;
 using EtlLib.Data;
 using EtlLib.Logging.NLog;
 using EtlLib.Nodes.AmazonS3;
@@ -15,11 +20,17 @@ namespace EtlLib.ConsoleTest
     {
         private static void Main(string[] args)
         {
-            var loggingAdapter = new NLogLoggingAdapter();
-            EtlLibConfig.LoggingAdapter = loggingAdapter;
+            EtlLibConfig.LoggingAdapter = new NLogLoggingAdapter();
             EtlLibConfig.EnableDebug = true;
 
-            var builder = EtlProcessBuilder.Create()
+            var config = new EtlPipelineConfig()
+                .Set("s3_bucket_name", "***REMOVED***")
+                .SetAmazonS3BasicCredentials("***REMOVED***", "***REMOVED***")
+                .Set("output_dir", @"C:\Users\Cyle\Desktop\etl_test\");
+
+            var context = new EtlPipelineContext(config);
+
+            var builder = EtlProcessBuilder.Create(context)
                 .Input(ctx => new CsvReaderNode(@"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a.csv"))
                 .GenerateRowNumbers("_id")
                 .Classify("income_segment", cat =>
@@ -42,74 +53,68 @@ namespace EtlLib.ConsoleTest
                     ctx.ObjectPool.Return(row);
                     return newRow;
                 })
-                .Continue(ctx => new CsvWriterNode(filePath: @"C:\Users\Cyle\Downloads\LoanStats3a.csv\LoanStats3a_TRANSFORMED.csv"))
+                .Continue(ctx => new CsvWriterNode(Path.Combine(ctx.Config["output_dir"], "LoanStats3a_TRANSFORMED.csv"))
+                    .IncludeHeader()
+                    .WithEncoding(Encoding.UTF8))
                 .BZip2Files()
-                .CompleteWithResult(ctx => new AmazonS3WriterNode(***REMOVED***, "***REMOVED***")
-                    .WithBasicCredentials("***REMOVED***", "***REMOVED***")
-                );
+                .CompleteWithResult();
 
             //builder.PrintGraph();
 
             var process = builder.Build();
 
-            var pipelineResult = EtlPipeline.Create(cfg =>
-                {
-                    cfg
-                        .Named("Test ETL Process")
-                        //.RegisterObjectPool<Row>(50000)
-                        .WithContextInitializer(ctx =>
-                        {
-                            ctx.Config["s3_bucket_name"] = "***REMOVED***";
-                            ctx.Config["s3_access_key"] = "***REMOVED***";
-                            ctx.Config["s3_secret_access_key"] = "***REMOVED***";
-                            ctx.Config["outfile"] = @"C:\Users\Cyle\Desktop\cyle_d_date.csv";
-                        });
-                })
-                .RunWithResult(process)
-                .ForEachResult((context, i, arg3) =>
-                {
-                    context.State["s3_filename"] = arg3.ObjectKey;
-                    Console.WriteLine($"Setting 's3_filename' to '{arg3.ObjectKey}'");
-                })
-                /*.Run(ctx => new GenerateDateDimensionEtlProcess(
-                    ctx.Config["s3_bucket_name"], ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"], ctx.Config["outfile"]))
-                .Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>
-                {
-                    /*red.Execute(cmd => cmd.Create
-                        .Table("staging_customers", tbl => tbl
-                            .IfNotExists()
-                            .Temporary()
-                            .NoBackup()
-                            .WithColumns(cols =>
-                            {
-                                cols.Add("my_id", t => t.AsInt8())
-                                    .Identity(1, 1)
-                                    .Unique()
-                                    .DistributionKey()
-                                    .Nullable();
+            var filesToUploadToS3 = new List<IHasFilePath>();
 
-                                cols.Add("amount", t => t.AsDecimal(8, 2));
-                            })
-                            .SortKey.Interleaved("my_id", "amount")
-                            .PrimaryKey("my_id", "amount")
-                            .UniqueKey("my_id", "amount")
-                        ));
-
-                    red.Execute(cmd => cmd.Copy
-                        .To("stage.doesntexist")
-                        .From.S3("bucketName", s3 => s3
-                            .UsingObjectPrefix("cyle_d_date.csv.bzip2")
-                            .FileFormat.Csv(csv => csv
-                                .DelimitedBy(",")
-                                .QuoteAs("%"))
-                            .CompressedUsing.Bzip2()
-                        )
-                        .AuthorizedBy.AccessKey(ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"])
-                    );
-                }))*/
-                .Execute();
-
-
+            var pipelineResult = EtlPipeline.Create(cfg => cfg
+                .Named("Test ETL Process")
+                .UseExistingContext(context))
+                .EnsureDirectoryTreeExists(ctx => ctx.Config["output_dir"])
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_dir"], "cyle_d_date.csv")),
+                    result => result.AppendResult(filesToUploadToS3))
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_dir"], "cyle_d_date2.csv")),
+                    result => result.AppendResult(filesToUploadToS3))
+                .Run(ctx => new GenerateDateDimensionEtlProcess(Path.Combine(ctx.Config["output_dir"], "cyle_d_date3.csv")),
+                    result => result.AppendResult(filesToUploadToS3))
+                .Run(process, result => result.AppendResult(filesToUploadToS3))
+                .Run(ctx => new AmazonS3WriterEtlOperation(***REMOVED***, ctx.Config["s3_bucket_name"], filesToUploadToS3.Select(x => x.FilePath))
+                        .WithStorageClass(S3StorageClass.ReducedRedundancy), 
+                    result => result.ForEachResult((ctx, i, item) => Console.WriteLine($"S3 Result: {item.ObjectKey} {item.ETag}"))
+                )
+                    /*.Run(ctx => new ExecuteRedshiftBatchOperation("Name", "connectionString", red =>
+                    {
+                        red.Execute(cmd => cmd.Create
+                            .Table("staging_customers", tbl => tbl
+                                .IfNotExists()
+                                .Temporary()
+                                .NoBackup()
+                                .WithColumns(cols =>
+                                {
+                                    cols.Add("my_id", t => t.AsInt8())
+                                        .Identity(1, 1)
+                                        .Unique()
+                                        .DistributionKey()
+                                        .Nullable();
+    
+                                    cols.Add("amount", t => t.AsDecimal(8, 2));
+                                })
+                                .SortKey.Interleaved("my_id", "amount")
+                                .PrimaryKey("my_id", "amount")
+                                .UniqueKey("my_id", "amount")
+                            ));
+    
+                        red.Execute(cmd => cmd.Copy
+                            .To("stage.doesntexist")
+                            .From.S3("bucketName", s3 => s3
+                                .UsingObjectPrefix("cyle_d_date.csv.bzip2")
+                                .FileFormat.Csv(csv => csv
+                                    .DelimitedBy(",")
+                                    .QuoteAs("%"))
+                                .CompressedUsing.Bzip2()
+                            )
+                            .AuthorizedBy.AccessKey(ctx.Config["s3_access_key"], ctx.Config["s3_secret_access_key"])
+                        );
+                    }))*/
+                    .Execute();
 
             Console.WriteLine("\nPress enter to exit...\n");
             Console.ReadLine();

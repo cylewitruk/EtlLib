@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericResultCollectionNode<TIn> : AbstractInputNode<TIn> 
+    public class GenericResultCollectionNode<TIn> : AbstractInputNode<TIn>, IResultCollectorNode
         where TIn : class, INodeOutput<TIn>, new()
     {
         private readonly List<TIn> _results;

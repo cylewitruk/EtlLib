@@ -10,35 +10,16 @@ namespace EtlLib.Nodes.CsvFiles
     public class CsvWriterNode : AbstractInputOutputNode<Row, NodeOutputWithFilePath>
     {
         private string _filePath;
-        private string _stateKey;
-        private bool _isUsingStateKey;
         private bool _includeHeader;
         private int _writtenRowCount;
         private Encoding _encoding;
 
-        public CsvWriterNode(string filePath = null, string stateKey = null)
+        public CsvWriterNode(string filePath)
         {
             _filePath = filePath;
             _includeHeader = true;
 
             _encoding = Encoding.UTF8;
-
-            if (!string.IsNullOrWhiteSpace(stateKey))
-                WithFilePathFromStateKey(stateKey);
-        }
-
-        public CsvWriterNode WithSpecifiedFilePath(string filePath)
-        {
-            _filePath = filePath;
-            _isUsingStateKey = false;
-            return this;
-        }
-
-        public CsvWriterNode WithFilePathFromStateKey(string key)
-        {
-            _stateKey = key;
-            _isUsingStateKey = true;
-            return this;
         }
 
         public CsvWriterNode IncludeHeader(bool includeHeaders = true)
@@ -55,9 +36,6 @@ namespace EtlLib.Nodes.CsvFiles
 
         public override void OnExecute(EtlPipelineContext context)
         {
-            if (_isUsingStateKey)
-                _filePath = (string)context.State[_stateKey];
-
             var log = context.GetLogger("EtlLib.Nodes.CsvWriterNode");
             var first = true;
             var columns = new List<string>();

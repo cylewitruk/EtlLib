@@ -1,11 +1,12 @@
 ﻿using System;
+using EtlLib.Data;
 using EtlLib.Pipeline.Builders;
 
 namespace EtlLib.Pipeline.Operations
 {
     public abstract class AbstractEtlProcess : AbstractEtlOperationWithNoResult
     {
-        private EtlProcess _etlProcess;
+        private IEtlOperationWithNoResult _etlProcess;
 
         protected void Build(Action<IEtlProcessBuilder> builder)
         {
@@ -19,6 +20,26 @@ namespace EtlLib.Pipeline.Operations
         public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
             return _etlProcess.Execute(context);
+        }
+    }
+
+    public abstract class AbstractEtlProcess<T> : AbstractEtlOperationWithEnumerableResult<T>
+        where T : class, INodeOutput<T>, new()
+    {
+        private IEtlOperationWithEnumerableResult<T> _etlProcess;
+
+        protected void Build(Action<IEtlProcessBuilder> builder)
+        {
+            var b = EtlProcessBuilder.Create();
+            builder(b);
+
+            _etlProcess = ((EtlProcessBuilder)b).Build<T>();
+            Named(_etlProcess.Name);
+        }
+
+        public override IEnumerableEtlOperationResult<T> ExecuteWithResult(EtlPipelineContext context)
+        {
+            return _etlProcess.ExecuteWithResult(context);
         }
     }
 }

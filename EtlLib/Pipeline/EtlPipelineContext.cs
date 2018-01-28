@@ -11,17 +11,19 @@ namespace EtlLib.Pipeline
     {
         public IDictionary<string, object> State { get; }
         public ObjectPoolContainer ObjectPool { get; }
-        public IDictionary<string, string> Config { get; }
+        public IEtlPipelineConfig Config { get; }
 
         internal IDictionary<INode, Exception> Errors { get; }
 
-        public EtlPipelineContext()
+        public EtlPipelineContext(IEtlPipelineConfig config)
         {
             State = new ConcurrentDictionary<string, object>();
             Errors = new ConcurrentDictionary<INode, Exception>();
             ObjectPool = new ObjectPoolContainer();
-            Config = new ConcurrentDictionary<string, string>();
+            Config = config;
         }
+
+        public EtlPipelineContext() : this(new EtlPipelineConfig()) { }
 
         public ILogger GetLogger(string name)
         {

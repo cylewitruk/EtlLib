@@ -25,6 +25,7 @@ namespace EtlLib.Nodes.Dapper
             _param = param;
             _isolationLevel = IsolationLevel.ReadCommitted;
             _buffered = true;
+            _commandType = CommandType.Text;
         }
 
         public DapperReaderNode<TOut> WithIsolationLevel(IsolationLevel isolationLevel)

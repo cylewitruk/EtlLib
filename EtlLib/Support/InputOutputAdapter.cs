@@ -10,24 +10,28 @@ namespace EtlLib.Support
     public interface IInputOutputAdapter : IDisposable
     {
         INode OutputNode { get; }
+        IEnumerable<INode> AttachedNodes { get; }
         int EmitCount { get; }
 
-        bool AttachConsumer<T>(INodeWithInput<T> input) 
-            where T : class, INodeOutput<T>, new();
+        bool AttachConsumer(INodeWithInput input);
 
-        bool AttachConsumer<T>(INodeWithInput2<T> input)
-            where T : class, INodeOutput<T>, new();
-
-        void SetObjectPool(IObjectPool pool);
+        IInputOutputAdapter SetObjectPool(IObjectPool pool);
+        IInputOutputAdapter SetNodeStatisticsCollector(NodeStatistics stats);
     }
 
-    public class InputOutputAdapter<T> : IInputOutputAdapter, IEmitter<T>
+    public interface IInputOutputAdapter<T> : IInputOutputAdapter
+        where T : class, INodeOutput<T>, new()
+    {
+        bool AttachConsumer(INodeWithInput<T> input);
+    }
+
+    public class InputOutputAdapter<T> : IInputOutputAdapter<T>, IEmitter<T>
         where T : class, INodeOutput<T>, new()
     {
         private readonly ConcurrentDictionary<INode, BlockingCollection<T>> _queueMap;
         private readonly ConcurrentBag<INodeWithInput<T>> _inputs;
         private readonly INodeWithOutput<T> _output;
-        private readonly NodeStatistics _nodeStatistics;
+        private NodeStatistics _nodeStatistics;
         private ObjectPool<T> _objectPool;
         private ILogger _log;
         private volatile int _emittedItems;
@@ -36,14 +40,14 @@ namespace EtlLib.Support
         public INodeWaitSignaller WaitSignaller { get; }
         public INodeWaiter Waiter { get; }
         public int EmitCount => _emittedItems;
+        public IEnumerable<INode> AttachedNodes => _inputs;
 
-        public InputOutputAdapter(INodeWithOutput<T> output, NodeStatistics nodeStatistics)
+        public InputOutputAdapter(INodeWithOutput<T> output)
         {
             _queueMap = new ConcurrentDictionary<INode, BlockingCollection<T>>();
             _inputs = new ConcurrentBag<INodeWithInput<T>>();
             _output = output;
             _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.IOAdapter");
-            _nodeStatistics = nodeStatistics;
 
             if (output is IBlockingNode)
             {
@@ -56,11 +60,20 @@ namespace EtlLib.Support
             {
                 Waiter = new NoWaitNodeWaiter();
             }
+
+            _output.SetEmitter(this);
         }
 
-        public void SetObjectPool(IObjectPool pool)
+        public IInputOutputAdapter SetNodeStatisticsCollector(NodeStatistics stats)
+        {
+            _nodeStatistics = stats;
+            return this;
+        }
+
+        public IInputOutputAdapter SetObjectPool(IObjectPool pool)
         {
             _objectPool = (ObjectPool<T>)pool;
+            return this;
         }
 
         public InputOutputAdapter<T> WithLogger(ILogger log)
@@ -79,8 +92,12 @@ namespace EtlLib.Support
             return _queueMap[node].GetConsumingEnumerable();
         }
 
-        public bool AttachConsumer<TIn>(INodeWithInput<TIn> input)
-            where TIn : class, INodeOutput<TIn>, new()
+        public bool AttachConsumer(INodeWithInput input)
+        {
+            return AttachConsumer((INodeWithInput<T>) input);
+        }
+
+        public bool AttachConsumer(INodeWithInput<T> input)
         {
             if (input.Input != null)
                 throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) already has an input assigned.");
@@ -88,21 +105,12 @@ namespace EtlLib.Support
             if (!_queueMap.TryAdd(input, new BlockingCollection<T>(new ConcurrentQueue<T>())))
                 return false;
 
-            _inputs.Add((INodeWithInput<T>)input);
+            input
+                .SetInput(GetConsumingEnumerable(input))
+                .SetWaiter(Waiter);
 
-            return true;
-        }
+            _inputs.Add(input);
 
-        public bool AttachConsumer<TIn>(INodeWithInput2<TIn> input)
-            where TIn : class, INodeOutput<TIn>, new()
-        {
-            if (input.Input != null && input.Input2 != null)
-                throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) has two input slots of which both are already assigned.");
-
-            if (!_queueMap.TryAdd(input, new BlockingCollection<T>(new ConcurrentQueue<T>())))
-                return false;
-
-            _inputs.Add((INodeWithInput<T>)input);
             return true;
         }
 
@@ -114,7 +122,7 @@ namespace EtlLib.Support
             item.Freeze();
             _emittedItems++;
 
-            _nodeStatistics.IncrementWrites(OutputNode);
+            _nodeStatistics?.IncrementWrites(OutputNode);
 
             var firstTarget = true;
             foreach (var queue in _queueMap)
@@ -130,7 +138,7 @@ namespace EtlLib.Support
                     item.CopyTo(duplicatedItem);
                     queue.Value.Add(duplicatedItem);
                 }
-                _nodeStatistics.IncrementReads(queue.Key);
+                _nodeStatistics?.IncrementReads(queue.Key);
             }
 
             if (_emittedItems % 5000 == 0)

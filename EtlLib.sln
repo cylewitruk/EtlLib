@@ -36,6 +36,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.FileCompression", "EtlLib.Nodes.FileCompression\EtlLib.Nodes.FileCompression.csproj", "{774972FA-3CC8-451D-9A01-E3E1F5D69294}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{54E43C5D-DFA1-4866-B891-F3A58EE46B04}"
+	ProjectSection(SolutionItems) = preProject
+		version.json = version.json
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.Dapper.IntegrationTests", "EtlLib.Nodes.Dapper.IntegrationTests\EtlLib.Nodes.Dapper.IntegrationTests.csproj", "{E5186521-720E-434F-9421-3B97359165DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,6 +96,10 @@ Global
 		{774972FA-3CC8-451D-9A01-E3E1F5D69294}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{774972FA-3CC8-451D-9A01-E3E1F5D69294}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{774972FA-3CC8-451D-9A01-E3E1F5D69294}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5186521-720E-434F-9421-3B97359165DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5186521-720E-434F-9421-3B97359165DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5186521-720E-434F-9421-3B97359165DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5186521-720E-434F-9421-3B97359165DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,6 +117,7 @@ Global
 		{5D007C8D-C6CD-4DC9-B7DC-706D605601AD} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 		{EAE98EE6-EACE-4298-84D2-9CDFD7A9E9E0} = {E594D518-7A31-44C6-A522-E8123D05AF21}
 		{774972FA-3CC8-451D-9A01-E3E1F5D69294} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
+		{E5186521-720E-434F-9421-3B97359165DC} = {E594D518-7A31-44C6-A522-E8123D05AF21}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {35A58916-7182-4058-B44F-F19927D47BA6}
