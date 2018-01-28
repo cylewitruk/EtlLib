@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.16" PrivateAssets="all" />
     <PackageReference Include="Npgsql" Version="3.2.6" />
   </ItemGroup>
 
