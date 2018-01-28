@@ -1,34 +1,42 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using EtlLib.Data;
 using EtlLib.Pipeline;
 
-namespace EtlLib.Nodes.SqlServer
+namespace EtlLib.Nodes.Impl
 {
-    public class SqlServerReaderNode : AbstractOutputNode<Row>
+    public class SimpleDbDataReaderNode : AbstractOutputNode<Row>
     {
-        private readonly string _connectionString;
+        private readonly Func<IDbConnection> _getConnection;
+        private IsolationLevel _isolationLevel;
+        private CommandType _commandType;
         private readonly string _commandText;
         private readonly Dictionary<string, object> _parameters;
 
-        private IsolationLevel _isolationLevel;
 
-        public SqlServerReaderNode(string connectionString, string commandText)
+        public SimpleDbDataReaderNode(Func<IDbConnection> getDbConnectionFn, string commandText)
         {
-            _connectionString = connectionString;
+            _getConnection = getDbConnectionFn;
             _commandText = commandText;
             _parameters = new Dictionary<string, object>();
             _isolationLevel = IsolationLevel.ReadCommitted;
+            _commandType = CommandType.Text;
         }
 
-        public SqlServerReaderNode WithParameter(string name, object value)
+        public SimpleDbDataReaderNode WithCommandType(CommandType commandType)
+        {
+            _commandType = commandType;
+            return this;
+        }
+
+        public SimpleDbDataReaderNode WithParameter(string name, object value)
         {
             _parameters[name] = value;
             return this;
         }
 
-        public SqlServerReaderNode WithIsolationLevel(IsolationLevel isolationLevel)
+        public SimpleDbDataReaderNode WithIsolationLevel(IsolationLevel isolationLevel)
         {
             _isolationLevel = isolationLevel;
             return this;
@@ -36,15 +44,16 @@ namespace EtlLib.Nodes.SqlServer
 
         public override void OnExecute(EtlPipelineContext context)
         {
-            using (var con = new SqlConnection(_connectionString))
+            using (var con = _getConnection())
             {
-                con.Open();
+                if (con.State != ConnectionState.Open)
+                    con.Open();
 
                 using (var trx = con.BeginTransaction(_isolationLevel))
                 using (var cmd = con.CreateCommand())
                 {
                     cmd.CommandText = _commandText;
-                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandType = _commandType;
                     cmd.Transaction = trx;
 
                     foreach (var param in _parameters)
@@ -58,9 +67,6 @@ namespace EtlLib.Nodes.SqlServer
 
                     using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
                     {
-                        if (!reader.HasRows)
-                            return;
-                        
                         while (reader.Read())
                         {
                             var row = new Row();
