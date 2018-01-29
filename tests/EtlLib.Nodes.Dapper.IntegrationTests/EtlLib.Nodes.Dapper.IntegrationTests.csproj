@@ -15,9 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EtlLib.Nodes.Dapper\EtlLib.Nodes.Dapper.csproj" />
+    <ProjectReference Include="..\..\src\EtlLib.Nodes.Dapper\EtlLib.Nodes.Dapper.csproj" />
+    <ProjectReference Include="..\..\src\EtlLib\EtlLib.csproj" />
     <ProjectReference Include="..\EtlLib.UnitTests\EtlLib.UnitTests.csproj" />
-    <ProjectReference Include="..\EtlLib\EtlLib.csproj" />
   </ItemGroup>
 
 </Project>
