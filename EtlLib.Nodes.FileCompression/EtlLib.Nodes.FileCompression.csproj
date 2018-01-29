@@ -2,6 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>EtlLib.Nodes.FileCompression</PackageId>
+    <PackageVersion>$(Version)</PackageVersion>
+    <Authors>Cyle Witruk</Authors>
+    <Description>File compression nodes via SharpZipLib for EtlLib: A simple ETL framework for .NET.</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <PackageTags>etl extract transform load</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
