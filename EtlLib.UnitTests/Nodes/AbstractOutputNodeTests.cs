@@ -1,39 +1,37 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using EtlLib.Data;
-using EtlLib.Nodes;
 using EtlLib.Pipeline;
-using EtlLib.Support;
 using FluentAssertions;
+using Xunit;
 
 namespace EtlLib.UnitTests.Nodes
 {
     public class AbstractOutputNodeTests
     {
+        [Fact]
         public void AbstractOutputNode_calls_SignalEnd_when_general_error()
         {
+            var exception = new Exception("This is a test exception.");
+
             var context = new EtlPipelineContext();
             var errorHandler = new TestErrorHandler();
-            var nodeStatistics = new NodeStatistics();
             var emitter = new TestEmitter<Row>();
 
             var node = new TestAbstractOutputNode<Row>((ctx, e) =>
             {
                 e.Emit(new Row());
-                throw new Exception("This is a test exception.");
+                throw exception;
             });
             node.SetErrorHandler(errorHandler);
             node.SetEmitter(emitter);
-            nodeStatistics.RegisterNode(node);
 
             node.Execute(context);
-
-            nodeStatistics.TotalWrites.Should().Be(1);
-            nodeStatistics.TotalErrors.Should().Be(1);
+            
             errorHandler.Errors.Count.Should().Be(1);
+            errorHandler.Errors.First().Node.Should().Be(node);
+            errorHandler.Errors.First().Exception.Should().Be(exception);
             emitter.HasSignalledEnd.Should().BeTrue();
         }
-
-        
     }
 }
