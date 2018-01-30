@@ -12,6 +12,27 @@ EtlLib is a small, lightweight and simple ETL (Extract-Transform-Load) framework
 - Strive for extensibility and introduce functionality via integration libraries, while providing enough base functionality to keep those integrations simple and straightforward.
 - Should be easy to troubleshoot and identify problems.
 
+#### Current Version
+
+The current version of this project is *beta*.  I have used it in simpler scenarios, but not all paths are fully tested and I'm working on getting the test coverage up-to-par.
+
+#### Packages
+
+| Package                      | Description                              |     State     |
+| ---------------------------- | ---------------------------------------- | :-----------: |
+| EtlLib                       | Core library and base functionality of EtlLib. | Mostly Tested |
+| EtlLib.Logging.NLog          | NLog logging adapter for EtlLib.         |      OK       |
+| EtlLib.Nodes.AmazonS3        | Amazon S3 integration for EtlLib.        |      OK       |
+| EtlLib.Nodes.CsvFiles        | Integration with CsvHelper library for reading and writing CSV files. |      OK       |
+| EtlLib.Nodes.Dapper          | Integration with Dapper for reading typed data from supported databases. | Mostly Tested |
+| EtlLib.Nodes.FileCompression | Integration with SharpZipLib for compressing files. | Mostly Tested |
+| EtlLib.Nodes.MongoDb         | Integration with MongoDB's official driver for reading and writing documents to MongoDB. |  Not Tested   |
+| EtlLib.Nodes.PostgreSQL      | Integration with Npgsql (official .NET driver) for reading and writing data to PostgreSQL. |  Not Tested   |
+| EtlLib.Nodes.Redshift        | Integration with Amazon Redshift, using Npgsql.  Supports general ETL processes, such as creating staging tables, running the COPY command, etc. |  Not Tested   |
+| EtlLib.Nodes.SqlServer       | Integration with Microsoft's SqlServerConnection for reading and writing to MSSQL databases. |  Not Tested   |
+
+
+
 #### A Quick Example:
 
 In this example, we create an **ETL Process** which reads a CSV file, generates row numbers for the data, adds a new column *income segment* with classification information, filters away items where *grade* == *"A"*, adds a new column *is_transformed* with the value *true*, dumps the result to a new CSV file and BZip2's up the results.
@@ -51,19 +72,19 @@ In this example, `GenerateRowNumbers()`, `Classify()`, `Filter()`, `Transform()`
 
 ## The Building Blocks
 
-#### ETL Pipeline
+### ETL Pipeline
 
 The primary concept of EtlLib is the **ETL Pipeline** and its **ETL Operations**.  ETL Pipelines execute step-by-step, synchronously by default, although you can use the `.RunParallel()` method to run several operations in tandem.
 
 ETL Pipelines also handle **Object Pooling**, if desired, which can help with GC-thrashing when a large number of records will be processed by re-using objects and keeping them referenced instead of constantly creating new objects for each input record and leaving them for the GC to clean up.
 
-#### ETL Pipeline Context
+### ETL Pipeline Context
 
 The **ETL Pipeline Context** is an object which follows along throughout the execution of the pipeline.  It's available to you from the beginning where you can load configuration parameters and save state along the way.  ETL Pipeline Contexts are thread-safe.
 
 ETL Pipeline Contexts can be created either declaratively for sharing configuration across multiple ETL Processes, or implicitly during the creation of an ETL Pipeline.
 
-##### Declarative Example
+#### Declarative Example
 
 ```C#
 // Note: This could be populated from database, configuration file, etc.
@@ -78,7 +99,7 @@ context.State["hello"] = "world!";
 EtlPipeline.Create(context)...
 ```
 
-##### Implicit Example
+#### Implicit Example
 
 ```c#
 EtlPipeline.Create(settings =>
@@ -96,7 +117,7 @@ And then the context will be available to you when calling methods such as `Run(
 
 > Note: If you are designing your entire ETL Pipeline in one class, making use of closures are probably an easier way to go.  However, if you are designing larger ETL Pipelines split across several files, the context provides a simple way of making data available throughout.
 
-#### ETL Operation
+### ETL Operation
 
 An **ETL Operation** are the essential building blocks of an **ETL Pipeline**.  ETL Pipelines only execute ETL Operations, and there are three types of ETL Operations:
 
@@ -117,7 +138,7 @@ EtlPipeline.Create(settings => {})
     });
 ```
 
-#### ETL Process
+### ETL Process
 
 The **ETL Process** is a built-in **ETL Operation** either of **No Result** or **Enumerable Result** type, which provides streaming-style ETL via **Nodes**.  This can be useful when trying to keep down memory usage - remember that ETL Operations execute synchronously, one-by-one, so that's not the best place to be processing large streams of data because it will need to be buffered in memory between operations.
 
@@ -134,9 +155,9 @@ var process = EtlProcessBuilder.Create()
     .CompleteWithResult() // Complete and pass results back to the Pipeline (end with output)
 ```
 
-#### Nodes
+### Nodes
 
-**Nodes** are a built-in feature which are used by **ETL Operations** and are designed for processing data in a streaming fashion.  Each node in an ETL Operation runs in its own thread (scheduled by the task scheduler) with an input/output adapter sitting in-between which *Nodes with Output* **Emit** to and *Nodes with Input* **Consume** from.
+**Nodes** are a built-in feature which are used by **ETL Processes** and are designed for processing data in a streaming fashion.  Each node in an ETL Process runs in its own thread (scheduled by the task scheduler) with an input/output adapter sitting in-between which *Nodes with Output* **Emit** to and *Nodes with Input* **Consume** from.
 
 Data is passed between nodes as objects.  These objects as a rule should be immutable, and must implement the `INodeOutput<T>` interface which in turn implements the `IFreezable` (immutability) and `IResettable` (object pooling) interfaces, be a class and have a public parameterless constructor.  When a record passes through the input/output adapter, it will call `IFreezable.Freeze()` on the record.  If the framework decides that it needs to clone the object (in a branching scenario, for example), it will call`INodeOutput<T>.CopyTo()` on the record, so if you implement your own objects, be sure to implement these methods appropriately.
 
