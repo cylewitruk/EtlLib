@@ -8,6 +8,8 @@
     <Description>A simple ETL framework for .NET.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/cylewitruk/EtlLib</PackageProjectUrl>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>etl extract transform load</PackageTags>
   </PropertyGroup>
 

@@ -5,9 +5,11 @@
     <PackageId>EtlLib.Nodes.CsvFiles</PackageId>
     <PackageVersion>$(Version)</PackageVersion>
     <Authors>Cyle Witruk</Authors>
-    <Description>CsvHelper nodes for EtlLib: A simple ETL framework for .NET.</Description>
+    <Description>CsvHelper integration nodes for EtlLib: A simple ETL framework for .NET.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/cylewitruk/EtlLib</PackageProjectUrl>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>etl extract transform load csv</PackageTags>
   </PropertyGroup>
 

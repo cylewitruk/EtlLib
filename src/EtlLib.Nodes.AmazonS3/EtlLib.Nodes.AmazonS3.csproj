@@ -5,9 +5,11 @@
     <PackageId>EtlLib.Nodes.AmazonS3</PackageId>
     <PackageVersion>$(Version)</PackageVersion>
     <Authors>Cyle Witruk</Authors>
-    <Description>Amazon S3 nodes for EtlLib: A simple ETL framework for .NET.</Description>
+    <Description>Amazon S3 integration nodes for EtlLib: A simple ETL framework for .NET.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/cylewitruk/EtlLib</PackageProjectUrl>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>etl extract transform load amazon s3</PackageTags>
   </PropertyGroup>
 
