@@ -78,13 +78,13 @@ The primary concept of EtlLib is the **ETL Pipeline** and its **ETL Operations**
 
 ETL Pipelines also take care of **Object Pooling**, if desired, which can help with GC-thrashing when a large number of records will be processed by re-using objects and keeping them referenced instead of constantly creating new objects for each input record and leaving them for the GC to clean up.
 
-#### ETL Pipeline Context
+### ETL Pipeline Context
 
 The **ETL Pipeline Context** is an object which follows along throughout the execution of the pipeline.  It's available to you from the beginning where you can load configuration parameters and save state along the way.  ETL Pipeline Contexts are thread-safe.
 
 ETL Pipeline Contexts can be created either declaratively for sharing configuration across multiple ETL Processes, or implicitly during the creation of an ETL Pipeline.
 
-##### Declarative Example
+#### Declarative Example
 
 ```C#
 // Note: This could be populated from database, configuration file, etc.
