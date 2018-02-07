@@ -5,7 +5,7 @@ using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Nodes.PostgreSQL
 {
-    public class ExecutePostgresCommandNode : AbstractEtlOperationWithNoResult
+    public class ExecutePostgresCommandOperation : AbstractEtlOperationWithNoResult
     {
         private readonly string _connectionString;
         private readonly string _commandText;
@@ -13,7 +13,7 @@ namespace EtlLib.Nodes.PostgreSQL
 
         private IsolationLevel _isolationLevel;
 
-        public ExecutePostgresCommandNode(string name, string connectionString, string commandText)
+        public ExecutePostgresCommandOperation(string name, string connectionString, string commandText)
         {
             Named(name);
             _connectionString = connectionString;
@@ -21,13 +21,13 @@ namespace EtlLib.Nodes.PostgreSQL
             _parameters = new Dictionary<string, object>();
         }
 
-        public ExecutePostgresCommandNode WithParameter(string name, object value)
+        public ExecutePostgresCommandOperation WithParameter(string name, object value)
         {
             _parameters[name] = value;
             return this;
         }
 
-        public ExecutePostgresCommandNode WithIsolationLevel(IsolationLevel isolationLevel)
+        public ExecutePostgresCommandOperation WithIsolationLevel(IsolationLevel isolationLevel)
         {
             _isolationLevel = isolationLevel;
             return this;
