@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoFixture.Xunit2" Version="4.0.1" />
+    <PackageReference Include="FluentAssertions" Version="5.0.0-rc0002" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\EtlLib.Nodes.Redshift\EtlLib.Nodes.Redshift.csproj" />
+    <ProjectReference Include="..\src\EtlLib\EtlLib.csproj" />
+  </ItemGroup>
+
+</Project>

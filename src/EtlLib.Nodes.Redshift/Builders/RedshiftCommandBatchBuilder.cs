@@ -19,5 +19,20 @@ namespace EtlLib.Nodes.Redshift.Builders
 
             Commands.Add(builder.Build());
         }
+
+        public void BeginTransaction()
+        {
+            Commands.Add("BEGIN;");
+        }
+
+        public void CommitTransaction()
+        {
+            Commands.Add("COMMIT;");
+        }
+
+        public void RollbackTransaction()
+        {
+            Commands.Add("ROLLBACK;");
+        }
     }
 }

@@ -65,7 +65,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         IRedshiftCopyFromCsvBuilder QuoteAs(string quote);
     }
 
-    class RedshiftCopyCommandBuilder : IRedshiftBuilder, IRedshiftCopyCommandBuilder, IRedshiftCopyFromAuthorizedByBuilder, IRedshiftCopyFromBuilder
+    public class RedshiftCopyCommandBuilder : IRedshiftBuilder, IRedshiftCopyCommandBuilder, IRedshiftCopyFromAuthorizedByBuilder, IRedshiftCopyFromBuilder
     {
         private string 
             _toTableName, 
@@ -155,7 +155,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
 
             sb.AppendLine(BuildFormatStatement());
 
-            return sb.ToString();
+            return sb.ToString().Trim();
         }
 
         private string BuildCopyStatement()

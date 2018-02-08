@@ -40,6 +40,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.UnitTests", "tests\E
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.Dapper.IntegrationTests", "tests\EtlLib.Nodes.Dapper.IntegrationTests\EtlLib.Nodes.Dapper.IntegrationTests.csproj", "{66F256D2-497A-4E73-B75F-B7BBF1DAB8FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.Redshift.Tests", "EtlLib.Nodes.Redshift.Tests\EtlLib.Nodes.Redshift.Tests.csproj", "{7081772A-19B8-4AE4-BAB0-511BC03B8A8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -94,6 +96,10 @@ Global
 		{66F256D2-497A-4E73-B75F-B7BBF1DAB8FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66F256D2-497A-4E73-B75F-B7BBF1DAB8FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66F256D2-497A-4E73-B75F-B7BBF1DAB8FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7081772A-19B8-4AE4-BAB0-511BC03B8A8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7081772A-19B8-4AE4-BAB0-511BC03B8A8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7081772A-19B8-4AE4-BAB0-511BC03B8A8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7081772A-19B8-4AE4-BAB0-511BC03B8A8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -111,6 +117,7 @@ Global
 		{2C005058-4594-4511-82DB-BBCFB807D2AE} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
 		{271DADF3-346B-4C12-BE7B-7C1F35184F90} = {E594D518-7A31-44C6-A522-E8123D05AF21}
 		{66F256D2-497A-4E73-B75F-B7BBF1DAB8FA} = {E594D518-7A31-44C6-A522-E8123D05AF21}
+		{7081772A-19B8-4AE4-BAB0-511BC03B8A8D} = {E594D518-7A31-44C6-A522-E8123D05AF21}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {35A58916-7182-4058-B44F-F19927D47BA6}
