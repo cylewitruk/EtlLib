@@ -31,10 +31,9 @@ namespace EtlLib.Nodes.CsvFiles
                     var row = context.ObjectPool.Borrow<Row>();
                     row.Load(reader.Context.HeaderRecord, reader.Context.Record);
                     Emit(row);
-                    //Emit(Row.FromArray(reader.Context.HeaderRecord, reader.Context.Record));
                 }
 
-                TypedEmitter.SignalEnd();
+                SignalEnd();
             }
         }
     }
