@@ -38,33 +38,35 @@ The current version of this project is *beta*.  I have used it in simpler scenar
 In this example, we create an **ETL Process** which reads a CSV file, generates row numbers for the data, adds a new column *income segment* with classification information, filters away items where *grade* == *"A"*, adds a new column *is_transformed* with the value *true*, dumps the result to a new CSV file and BZip2's up the results.
 
 ```c#
-    var builder = EtlProcessBuilder.Create()
-        .Input(ctx => new CsvReaderNode(@"C:\Files\LoanStats3a.csv"))
-        .GenerateRowNumbers("_id")
-        .Classify("income_segment", cat =>
-        {
-            decimal Income(Row row) => row.GetAs<decimal>("annual_inc");
-            cat
-              .When(x => string.IsNullOrWhiteSpace(x.GetAs<string>("annual_inc")), "UNKNOWN")
-              .When(x => Income(x) < 10000L, "0-9999")
-              .When(x => Income(x) < 20000L, "10000-19999")
-              .When(x => Income(x) < 30000L, "20000-29999")
-              .Default("30000+");
-      })
-      .Filter(row => row.GetAs<string>("grade") == "A")
-      .Transform((ctx, row) =>
-      {
-          var newRow = ctx.ObjectPool.Borrow<Row>();
-          row.CopyTo(newRow);
-          newRow["is_transformed"] = true;
-          ctx.ObjectPool.Return(row);
-          return newRow;
-      })
-      .Continue(ctx => new CsvWriterNode(@"C:\Files\LoanStats3a_TRANSFORMED.csv"))
-          .IncludeHeader()
-          .WithEncoding(Encoding.UTF8))
-      .BZip2Files()
-      .CompleteWithResult();
+EtlLibConfig.LoggingAdapter = new NLogLoggingAdapter();
+
+var builder = EtlProcessBuilder.Create()
+    .Input(ctx => new CsvReaderNode(@"C:\Files\LoanStats3a.csv"))
+    .GenerateRowNumbers("_id")
+    .Classify("income_segment", cat =>
+    {
+        decimal Income(Row row) => row.GetAs<decimal>("annual_inc");
+        cat
+          .When(x => string.IsNullOrWhiteSpace(x.GetAs<string>("annual_inc")), "UNKNOWN")
+          .When(x => Income(x) < 10000L, "0-9999")
+          .When(x => Income(x) < 20000L, "10000-19999")
+          .When(x => Income(x) < 30000L, "20000-29999")
+          .Default("30000+");
+    })
+    .Filter(row => row.GetAs<string>("grade") == "A")
+    .Transform((ctx, row) =>
+    {
+        var newRow = ctx.ObjectPool.Borrow<Row>();
+        row.CopyTo(newRow);
+        newRow["is_transformed"] = true;
+        ctx.ObjectPool.Return(row);
+        return newRow;
+    })
+    .Continue(ctx => new CsvWriterNode(@"C:\Files\LoanStats3a_TRANSFORMED.csv"))
+        .IncludeHeader()
+        .WithEncoding(Encoding.UTF8))
+    .BZip2Files()
+    .CompleteWithResult();
 ```
 In this example, `GenerateRowNumbers()`, `Classify()`, `Filter()`, `Transform()` are extension methods providing a cleaner DSL for built-in nodes `GenericTransformationNode<T>`, `GenericFilterNode<T>` and `GenericClassificationNode<T>`, which could have also been declared manually with the `.Continue()` syntax.  `Bzip2Files()` is an extension method from the *EtlLib.Nodes.FileCompression* package.
 
