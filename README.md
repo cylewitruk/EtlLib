@@ -99,7 +99,7 @@ context.State["hello"] = "world!";
 EtlPipeline.Create(context)...
 ```
 
-##### Implicit/Inline Example
+#### Implicit/Inline Example
 
 ```c#
 EtlPipeline.Create(settings =>
