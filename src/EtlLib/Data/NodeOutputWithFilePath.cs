@@ -1,8 +1,11 @@
-﻿namespace EtlLib.Data
+﻿using System.Runtime.Serialization;
+
+namespace EtlLib.Data
 {
     public class NodeOutputWithFilePath : INodeOutput<NodeOutputWithFilePath>, IHasFilePath
     {
         public string FilePath { get; private set; }
+        [IgnoreDataMember]
         public bool IsFrozen { get; private set; }
 
         public NodeOutputWithFilePath() { }
