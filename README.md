@@ -1,6 +1,6 @@
 # EtlLib: A Simple ETL Framework for .NET
 
-> Note: This readme is still being updated as of 2018-01-30 :)
+> Note: This readme is still being updated as of 2018-02-17 :)
 
 EtlLib is a small, lightweight and simple ETL (Extract-Transform-Load) framework for .NET, targeting .NET Standard 2.0, which aims to make life a little bit easier (and declarative) for simpler ETL tasks.  For heavy-lifting and complex inter-dependent ETL processes you should probably still be looking at the heavy-lifters such as Pentaho or Jasper.
 
@@ -18,18 +18,19 @@ The current version of this project is *beta*.  I have used it in simpler scenar
 
 #### Packages
 
-| Package                      | Description                              |     State     |
-| ---------------------------- | ---------------------------------------- | :-----------: |
-| EtlLib                       | Core library and base functionality of EtlLib. | Mostly Tested |
-| EtlLib.Logging.NLog          | NLog logging adapter for EtlLib.         |      OK       |
-| EtlLib.Nodes.AmazonS3        | Amazon S3 integration for EtlLib.        |      OK       |
+| Package                      | Description                                                  |     State     |
+| ---------------------------- | ------------------------------------------------------------ | :-----------: |
+| EtlLib                       | Core library and base functionality of EtlLib.               | Mostly Tested |
+| EtlLib.Logging.NLog          | NLog logging adapter for EtlLib.                             |      OK       |
+| EtlLib.Nodes.AmazonS3        | Amazon S3 integration for EtlLib.                            |      OK       |
 | EtlLib.Nodes.CsvFiles        | Integration with CsvHelper library for reading and writing CSV files. |      OK       |
 | EtlLib.Nodes.Dapper          | Integration with Dapper for reading typed data from supported databases. | Mostly Tested |
-| EtlLib.Nodes.FileCompression | Integration with SharpZipLib for compressing files. | Mostly Tested |
+| EtlLib.Nodes.FileCompression | Integration with SharpZipLib for compressing files.          | Mostly Tested |
 | EtlLib.Nodes.MongoDb         | Integration with MongoDB's official driver for reading and writing documents to MongoDB. |  Not Tested   |
 | EtlLib.Nodes.PostgreSQL      | Integration with Npgsql (official .NET driver) for reading and writing data to PostgreSQL. |  Not Tested   |
 | EtlLib.Nodes.Redshift        | Integration with Amazon Redshift, using Npgsql.  Supports general ETL processes, such as creating staging tables, running the COPY command, etc. |  Not Tested   |
 | EtlLib.Nodes.SqlServer       | Integration with Microsoft's SqlServerConnection for reading and writing to MSSQL databases. |  Not Tested   |
+| EtlLib.Nodes.Ssh             | Integration with SSH.NET for reading and writing files from SFTP/SCP. |  Not Tested   |
 
 
 
@@ -249,6 +250,16 @@ EtlLib provides two implementations of `INodeOutput<T>`: `Row` and `NodeOutputWi
 **Row** is a simple dictionary-type with string keys and object values.  It is the default output format for a number of the framework-provided nodes, such as `CsvReaderNode` and `[Db]ReaderNode`, for example.
 
 **NodeOutputWithFilePath** is a type which implements `IHasFilePath`.  A number of nodes, such as nodes from *EtlLib.Nodes.FileCompression* or *EtlLib.Nodes.AmazonS3* will take results containing file paths, after for example a `CsvWriterNode` has produced one or more files, and take action on them.  This output type is used to provide a consistent way of communicating file paths between nodes.
+
+## Logging
+
+EtlLib provides a simple adapter interface for hooking in your own logging providers.  The default logging adapter is a `NullLoggingAdapter` which will not produce any output.  With a logging adapter package, such as _EtlLib.Logging.NLog_ you can easily configure logging by using the static `EtlLibConfig.LoggingAdapter` static property:
+
+```C#
+EtlLibConfig.LoggingAdapter = new NLogLoggingAdapter();
+```
+
+
 
 ## More on the way....
 
