@@ -72,6 +72,8 @@ namespace EtlLib.Nodes.Ssh
 
                     Emit(new SftpFileUploadResult(file.FilePath, remotePath));
                 }
+
+                client.Disconnect();
             }
 
             SignalEnd();
