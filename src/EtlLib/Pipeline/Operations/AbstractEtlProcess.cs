@@ -27,18 +27,22 @@ namespace EtlLib.Pipeline.Operations
         where T : class, INodeOutput<T>, new()
     {
         private IEtlOperationWithEnumerableResult<T> _etlProcess;
+        private IEtlProcessBuilder _builder;
+        private Action<IEtlProcessBuilder> _bootstrapBuilder;
 
         protected void Build(Action<IEtlProcessBuilder> builder)
         {
-            var b = EtlProcessBuilder.Create();
-            builder(b);
-
-            _etlProcess = ((EtlProcessBuilder)b).Build<T>();
-            Named(_etlProcess.Name);
+            _bootstrapBuilder = builder;
         }
 
         public override IEnumerableEtlOperationResult<T> ExecuteWithResult(EtlPipelineContext context)
         {
+            _builder = EtlProcessBuilder.Create(context);
+            _bootstrapBuilder(_builder);
+
+            _etlProcess = ((EtlProcessBuilder)_builder).Build<T>();
+            Named(_etlProcess.Name);
+
             return _etlProcess.ExecuteWithResult(context);
         }
     }
