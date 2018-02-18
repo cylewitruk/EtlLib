@@ -59,8 +59,11 @@ namespace EtlLib.Nodes.SqlServer
                     using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
                     {
                         if (!reader.HasRows)
+                        {
+                            SignalEnd();
                             return;
-                        
+                        }
+
                         while (reader.Read())
                         {
                             var row = new Row();
