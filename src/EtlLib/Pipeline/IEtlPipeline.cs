@@ -21,6 +21,11 @@ namespace EtlLib.Pipeline
         IEtlPipeline Run<TOut>(Func<EtlPipelineContext, IEtlOperationWithEnumerableResult<TOut>> operation,
             Action<IEtlPipelineEnumerableResultContext<TOut>> result);
 
+        IEtlPipeline Run<TOut>(IEtlOperationWithScalarResult<TOut> operation,
+            Action<IEtlPipelineWithScalarResultContext<TOut>> result);
+        IEtlPipeline Run<TOut>(Func<EtlPipelineContext, IEtlOperationWithScalarResult<TOut>> operation,
+            Action<IEtlPipelineWithScalarResultContext<TOut>> result);
+
         IEtlPipelineEnumerableResultContext<TOut> RunWithResult<TOut>(IEtlOperationWithEnumerableResult<TOut> operation);
         IEtlPipelineEnumerableResultContext<TOut> RunWithResult<TOut>(Func<EtlPipelineContext, 
             IEtlOperationWithEnumerableResult<TOut>> operation);

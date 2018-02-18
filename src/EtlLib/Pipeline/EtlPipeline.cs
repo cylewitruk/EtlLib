@@ -164,6 +164,23 @@ namespace EtlLib.Pipeline
             return RegisterOperation(operation(_context));
         }
 
+        public IEtlPipeline Run<TOut>(IEtlOperationWithScalarResult<TOut> operation, Action<IEtlPipelineWithScalarResultContext<TOut>> result)
+        {
+            var ret = RegisterOperation(operation);
+            result(ret);
+            return this;
+        }
+
+        public IEtlPipeline Run<TOut>(
+            Func<EtlPipelineContext, IEtlOperationWithScalarResult<TOut>> ctx,
+            Action<IEtlPipelineWithScalarResultContext<TOut>> result)
+        {
+            var op = ctx(_context);
+            var ret = RegisterOperation(op);
+            result(ret);
+            return this;
+        }
+
         public IEtlPipelineWithScalarResultContext<TOut> RunWithResult<TOut>(IEtlOperationWithScalarResult<TOut> operation)
         {
             return RegisterOperation(operation);
