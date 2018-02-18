@@ -13,6 +13,9 @@ namespace EtlLib.Pipeline.Operations
 
         public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
+            var log = context.GetLogger(GetType().FullName);
+
+            log.Debug($"Ensuring existance of directory '{_path}'.");
             Directory.CreateDirectory(_path);
             return new EtlOperationResult(true);
         }
