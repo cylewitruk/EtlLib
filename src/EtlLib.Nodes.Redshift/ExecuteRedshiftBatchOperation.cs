@@ -34,11 +34,15 @@ namespace EtlLib.Nodes.Redshift
 
         public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
+            var log = context.GetLogger(GetType().FullName);
+
+            log.Debug("Opening connection to Redshift.");
             using (var con = new NpgsqlConnection(_connectionString))
             {
                 con.Open();
                 foreach (var redshiftCommand in _commands)
                 {
+                    log.Trace($"Executing Redshift command: {redshiftCommand}");
                     try
                     {
                         using (var cmd = con.CreateCommand())
@@ -50,6 +54,7 @@ namespace EtlLib.Nodes.Redshift
                     }
                     catch (Exception e)
                     {
+                        log.Error(e.Message);
                         return new EtlOperationResult(false)
                             .WithError(this, e, redshiftCommand);
                     }
