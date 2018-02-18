@@ -25,6 +25,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         IRedshiftCopyFromBuilder From { get; }
         IRedshiftCopyFromAuthorizedByBuilder AuthorizedBy { get; }
         IRedshiftCopyCommandBuilder WithColumnList(params string[] columns);
+        IRedshiftCopyCommandBuilder IgnoreHeaders(int numberOfRows);
     }
 
     public interface IRedshiftCopyFromAuthorizedByBuilder
@@ -77,6 +78,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         private RedshiftCopyFromS3Builder _copyFromS3Builder;
         private CopyFromAuthorizedBy _authorizedBy;
         private CopyFromSourceType _copyFromSource;
+        private int _ignoreHeaderRowCount = 0;
 
         public RedshiftCopyCommandBuilder()
         {
@@ -121,6 +123,12 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
             return this;
         }
 
+        public IRedshiftCopyCommandBuilder IgnoreHeaders(int numberOfRows = 1)
+        {
+            _ignoreHeaderRowCount = numberOfRows;
+            return this;
+        }
+
         public string Build()
         {
             var sb = new StringBuilder();
@@ -154,8 +162,19 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
             }
 
             sb.AppendLine(BuildFormatStatement());
+            sb.AppendLine(BuildDataConversionStatement());
 
             return sb.ToString().Trim();
+        }
+
+        private string BuildDataConversionStatement()
+        {
+            var statement = new StringBuilder();
+
+            if (_ignoreHeaderRowCount > 0)
+                statement.AppendLine($"IGNOREHEADER AS {_ignoreHeaderRowCount}");
+
+            return statement.ToString();
         }
 
         private string BuildCopyStatement()
