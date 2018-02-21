@@ -20,6 +20,11 @@ namespace EtlLib.Nodes.Redshift.Builders
             Commands.Add(builder.Build());
         }
 
+        public void Execute(IRedshiftBuilder cmd)
+        {
+            Commands.Add(cmd.Build());
+        }
+
         public void BeginTransaction()
         {
             Commands.Add("BEGIN;");
@@ -33,6 +38,11 @@ namespace EtlLib.Nodes.Redshift.Builders
         public void RollbackTransaction()
         {
             Commands.Add("ROLLBACK;");
+        }
+
+        public void Truncate(string tableName)
+        {
+            Commands.Add($"TRUNCATE TABLE {tableName}");
         }
     }
 }
