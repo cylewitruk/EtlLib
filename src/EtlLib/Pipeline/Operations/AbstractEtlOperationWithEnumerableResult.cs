@@ -10,6 +10,12 @@
             return this;
         }
 
+        IEtlOperationWithEnumerableResult<TOut> IEtlOperationWithEnumerableResult<TOut>.Named(string name)
+        {
+            Named(name);
+            return this;
+        }
+
         public IEtlOperationResult Execute(EtlPipelineContext context) => ExecuteWithResult(context);
 
         public abstract IEnumerableEtlOperationResult<TOut> ExecuteWithResult(EtlPipelineContext context);

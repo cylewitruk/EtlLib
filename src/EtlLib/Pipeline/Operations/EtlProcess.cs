@@ -20,6 +20,12 @@ namespace EtlLib.Pipeline.Operations
         {
         }
 
+        IEtlOperationWithEnumerableResult<TOut> IEtlOperationWithEnumerableResult<TOut>.Named(string name)
+        {
+            Named(name);
+            return this;
+        }
+
         public IEnumerableEtlOperationResult<TOut> ExecuteWithResult(EtlPipelineContext context)
         {
             var baseResult = base.Execute(context);

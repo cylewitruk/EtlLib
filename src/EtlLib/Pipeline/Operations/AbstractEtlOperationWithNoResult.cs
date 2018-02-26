@@ -10,6 +10,12 @@
             return this;
         }
 
+        IEtlOperationWithNoResult IEtlOperationWithNoResult.Named(string name)
+        {
+            Named(name);
+            return this;
+        }
+
         public abstract IEtlOperationResult Execute(EtlPipelineContext context);
     }
 }
