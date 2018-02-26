@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="1.50.4" />
+    <PackageReference Include="DapperExtensions" Version="1.6.3" />
+    <PackageReference Include="NLog" Version="4.5.0-rc06" />
+    <PackageReference Include="NLog.Config" Version="4.5.0-rc06" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EtlLib.Logging.NLog\EtlLib.Logging.NLog.csproj" />
+    <ProjectReference Include="..\..\src\EtlLib.Nodes.CsvFiles\EtlLib.Nodes.CsvFiles.csproj" />
+    <ProjectReference Include="..\..\src\EtlLib.Nodes.Dapper\EtlLib.Nodes.Dapper.csproj" />
+    <ProjectReference Include="..\..\src\EtlLib\EtlLib.csproj" />
+  </ItemGroup>
+
+</Project>

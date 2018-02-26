@@ -44,7 +44,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.Redshift.Tests
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Logging", "Logging", "{6BC21C23-3ED6-431A-8DF8-E327BBF3B827}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Nodes.Ssh", "src\EtlLib.Nodes.Ssh\EtlLib.Nodes.Ssh.csproj", "{4E69E761-5A1E-48B4-9842-02D1E5D454B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EtlLib.Nodes.Ssh", "src\EtlLib.Nodes.Ssh\EtlLib.Nodes.Ssh.csproj", "{4E69E761-5A1E-48B4-9842-02D1E5D454B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtlLib.Samples.Basic", "samples\EtlLib.Samples.Basic\EtlLib.Samples.Basic.csproj", "{2CB1EF7F-1647-4AF6-A1E1-9640DF24B627}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -108,6 +110,10 @@ Global
 		{4E69E761-5A1E-48B4-9842-02D1E5D454B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E69E761-5A1E-48B4-9842-02D1E5D454B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E69E761-5A1E-48B4-9842-02D1E5D454B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CB1EF7F-1647-4AF6-A1E1-9640DF24B627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CB1EF7F-1647-4AF6-A1E1-9640DF24B627}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CB1EF7F-1647-4AF6-A1E1-9640DF24B627}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CB1EF7F-1647-4AF6-A1E1-9640DF24B627}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,6 +133,7 @@ Global
 		{66F256D2-497A-4E73-B75F-B7BBF1DAB8FA} = {E594D518-7A31-44C6-A522-E8123D05AF21}
 		{E8F3AC57-EEC0-4331-BEDB-EE1B07EF1536} = {E594D518-7A31-44C6-A522-E8123D05AF21}
 		{4E69E761-5A1E-48B4-9842-02D1E5D454B4} = {56301CF0-0EC6-415D-928C-9AD9263DB371}
+		{2CB1EF7F-1647-4AF6-A1E1-9640DF24B627} = {008631DB-0533-426A-8A32-3A4886AE34F7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {35A58916-7182-4058-B44F-F19927D47BA6}
