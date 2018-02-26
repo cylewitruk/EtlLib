@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 
 namespace EtlLib
@@ -21,11 +22,13 @@ namespace EtlLib
         where T : class, IDbConnection, new()
     {
         IDbConnectionRegistrarProviderContext<T> Register(string name, string connectionString);
+        IDbConnectionRegistrarProviderContext<T> RegisterConnectionString(string connectionStringName);
     }
 
     public interface IDbConnectionRegistrarProviderContext
     {
         IDbConnectionRegistrarProviderContext Register(string name, string connectionString);
+        IDbConnectionRegistrarProviderContext RegisterConnectionString(string connectionStringName);
     }
 
     public class DbConnectionFactory : IDbConnectionRegistrar, IDbConnectionFactory
@@ -87,6 +90,17 @@ namespace EtlLib
             }));
             return this;
         }
+
+        public IDbConnectionRegistrarProviderContext<T> RegisterConnectionString(string connectionStringName)
+        {
+            _registrations.Add(connectionStringName, new DbConnectionFactoryRegistration(connectionStringName, 
+                ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString, 
+                cs => new T
+                {
+                    ConnectionString = cs
+                }));
+            return this;
+        }
     }
 
     public class DbConnectionRegistrarProviderContext : IDbConnectionRegistrarProviderContext
@@ -105,6 +119,14 @@ namespace EtlLib
         public IDbConnectionRegistrarProviderContext Register(string name, string connectionString)
         {
             _registrations.Add(name, new DbConnectionFactoryRegistration(name, connectionString, _createFn));
+            return this;
+        }
+
+        public IDbConnectionRegistrarProviderContext RegisterConnectionString(string connectionStringName)
+        {
+            _registrations.Add(connectionStringName, 
+                new DbConnectionFactoryRegistration(connectionStringName, 
+                    ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString, _createFn));
             return this;
         }
     }
