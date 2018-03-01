@@ -9,7 +9,7 @@ namespace EtlLib.Nodes.Dapper
     public class DapperReaderNode<TOut> : AbstractOutputNode<TOut> 
         where TOut : class, INodeOutput<TOut>, new()
     {
-        private readonly Func<IDbConnection> _createConnection;
+        private readonly string _connectionName;
         private readonly string _sql;
         private readonly object _param;
         private IsolationLevel _isolationLevel;
@@ -18,9 +18,9 @@ namespace EtlLib.Nodes.Dapper
         private DynamicParameters _dynamicParameters;
         private CommandType _commandType;
 
-        public DapperReaderNode(Func<IDbConnection> createConnection, string command, object param = null)
+        public DapperReaderNode(string connectionName, string command, object param = null)
         {
-            _createConnection = createConnection;
+            _connectionName = connectionName;
             _sql = command;
             _param = param;
             _isolationLevel = IsolationLevel.ReadCommitted;
@@ -61,12 +61,16 @@ namespace EtlLib.Nodes.Dapper
 
         public override void OnExecute(EtlPipelineContext context)
         {
-            using (var con = _createConnection())
-            using (var trx = con.BeginTransaction(_isolationLevel))
+            using (var con = context.CreateNamedDbConnection(_connectionName))
             {
-                foreach (var result in con.Query<TOut>(_sql, _dynamicParameters ?? _param, trx, _buffered, _timeoutInSeconds, _commandType))
+                con.Open();
+                using (var trx = con.BeginTransaction(_isolationLevel))
                 {
-                    Emit(result);
+                    foreach (var result in con.Query<TOut>(_sql, _dynamicParameters ?? _param, trx, _buffered,
+                        _timeoutInSeconds, _commandType))
+                    {
+                        Emit(result);
+                    }
                 }
             }
 

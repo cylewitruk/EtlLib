@@ -64,6 +64,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
     {
         IRedshiftCopyFromCsvBuilder DelimitedBy(string delimiter);
         IRedshiftCopyFromCsvBuilder QuoteAs(string quote);
+        IRedshiftCopyFromCsvBuilder EncodingAs(string encoiding);
     }
 
     public class RedshiftCopyCommandBuilder : IRedshiftBuilder, IRedshiftCopyCommandBuilder, IRedshiftCopyFromAuthorizedByBuilder, IRedshiftCopyFromBuilder
@@ -222,6 +223,8 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
                 case CopyFromS3FileFormat.Csv:
                 {
                     statement = "CSV";
+                    if(_copyFromS3Builder.FileEncodingSpecified)
+                        statement += $" ENCODING AS {_copyFromS3Builder.FileEncoding}";
                     if (_copyFromS3Builder.CustomQuotesSpecified)
                         statement += $" QUOTE AS '{_copyFromS3Builder.CustomQuote}'";
                     if (_copyFromS3Builder.CustomDelimiterSpecified)

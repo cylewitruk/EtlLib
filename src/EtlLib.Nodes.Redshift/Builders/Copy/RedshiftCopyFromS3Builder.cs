@@ -39,6 +39,8 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         public bool CustomQuotesSpecified { get; private set; }
         public string CustomQuote { get; private set; }
         public CopyFromS3FileFormat FileFormatType {get; private set;}
+        public string FileEncoding { get; private set; }
+        public bool FileEncodingSpecified { get; private set; }
 
         public IRedshiftCopyFromS3FileFormatBuilder FileFormat => this;
         public IRedshiftCopyFromS3CompressedUsingBuilder CompressedUsing => this;
@@ -90,6 +92,13 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         {
             CustomQuotesSpecified = true;
             CustomQuote = quote;
+            return this;
+        }
+        
+        public IRedshiftCopyFromCsvBuilder EncodingAs(string encoiding)
+        {   
+            FileEncodingSpecified = true;
+            FileEncoding = encoiding;
             return this;
         }
 
