@@ -18,9 +18,6 @@ namespace EtlLib.Pipeline
         private readonly ILogger _log;
         private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
-        private bool _throwOnException;
-        private Action<EtlPipelineContext, IEtlOperation, Exception> _onException;
-
         public string Name { get; }
         public EtlPipelineContext Context => _context;
         public IEtlOperationResult LastResult { get; private set; }
@@ -35,18 +32,6 @@ namespace EtlLib.Pipeline
             _executionResults = new Dictionary<IEtlOperation, IEtlOperationResult>();
 
             _settings = settings;
-        }
-
-        private EtlPipeline ThrowOnException()
-        {
-            _throwOnException = true;
-            return this;
-        }
-
-        private EtlPipeline OnException(Action<EtlPipelineContext, IEtlOperation, Exception> err)
-        {
-            _onException = err;
-            return this;
         }
 
         public EtlPipelineResult Execute()
@@ -79,11 +64,23 @@ namespace EtlLib.Pipeline
                         Debugger.Break();
 
                     _log.Error($"An error occured while executing step #{i+1} '{_steps[i].Name}' ({_steps[i].GetType().Name}): {e}");
-                    _onException?.Invoke(Context, _steps[i], e);
-                    if (_throwOnException)
-                        throw;
+                    var error = new EtlOperationError(_steps[i], e);
+                    if (!_settings.OnErrorFn.Invoke(Context, new[] {error}))
+                    {
+                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
+                        break;
+                    }
                 }
-                
+
+                if (LastResult.Errors.Count > 0)
+                {
+                    Context.ReportErrors(LastResult.Errors);
+                    if (!_settings.OnErrorFn.Invoke(Context, LastResult.Errors))
+                    {
+                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
+                        break;
+                    }
+                }
 
                 if (_steps[i] is IDisposable disposable)
                 {
