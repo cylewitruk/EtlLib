@@ -194,6 +194,21 @@ namespace EtlLib.Pipeline
             return RegisterOperation(parellelOperation);
         }
 
+        public IEtlPipeline RunIf(Func<EtlPipelineContext, bool> predicate, Func<EtlPipelineContext, IEtlOperation> operation)
+        {
+            var method = new Action(() =>
+            {
+                if (!predicate(Context))
+                    return;
+
+                var op = operation(Context);
+                op.Execute(Context);
+            });
+
+            Run(new DynamicInvokeEtlOperation(method).Named("Conditional Execution"));
+            return this;
+        }
+
         private IEtlPipeline RegisterOperation(IEtlOperation operation)
         {
             _steps.Add(operation);

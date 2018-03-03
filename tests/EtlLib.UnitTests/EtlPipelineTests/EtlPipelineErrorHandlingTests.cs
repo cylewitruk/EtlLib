@@ -8,49 +8,9 @@ using FluentAssertions;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Builders;
 using EtlLib.Pipeline.Operations;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 
 namespace EtlLib.UnitTests.EtlPipelineTests
 {
-    public class ExceptionThrowingEtlOperation : AbstractEtlOperationWithNoResult
-    {
-        private readonly Exception _exception;
-
-        public ExceptionThrowingEtlOperation(Exception exception)
-        {
-            _exception = exception;
-        }
-
-        public override IEtlOperationResult Execute(EtlPipelineContext context)
-        {
-            throw _exception;
-        }
-    }
-
-    public class ActionEtlOperation : AbstractEtlOperationWithNoResult
-    {
-        private readonly Func<EtlPipelineContext, bool> _action;
-        private readonly List<EtlOperationError> _errors;
-
-        public ActionEtlOperation(Func<EtlPipelineContext, bool> action)
-        {
-            _action = action;
-            _errors = new List<EtlOperationError>();
-        }
-
-        public override IEtlOperationResult Execute(EtlPipelineContext context)
-        {
-            return new EtlOperationResult(_action(context))
-                .WithErrors(_errors);
-        }
-
-        public ActionEtlOperation WithErrors(params EtlOperationError[] errors)
-        {
-            _errors.AddRange(errors);
-            return this;
-        }
-    }
-
     public class EtlPipelineErrorHandlingTests
     {
         

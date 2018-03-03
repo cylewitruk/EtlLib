@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using Dapper;
 using DapperExtensions;
 using EtlLib.Data;
 using EtlLib.Pipeline;
