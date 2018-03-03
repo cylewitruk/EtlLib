@@ -20,8 +20,16 @@ namespace EtlLib.Nodes.Impl
             foreach (var item in Input)
             {
                 var newItem = context.ObjectPool.Borrow<TOut>();
-                Emit(_mapFn(item, newItem));
-                context.ObjectPool.Return(item);
+                try
+                {
+                    Emit(_mapFn(item, newItem));
+                    context.ObjectPool.Return(item);
+                }
+                catch (Exception ex)
+                {
+                    RaiseError(ex, item);
+                    context.ObjectPool.Return(newItem);
+                }
             }
 
             TypedEmitter.SignalEnd();
