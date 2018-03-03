@@ -72,10 +72,10 @@ namespace EtlLib.Pipeline
                     }
                 }
 
-                if (LastResult.Errors.Count > 0)
+                if (LastResult?.Errors.Count > 0)
                 {
                     Context.ReportErrors(LastResult.Errors);
-                    if (!_settings.OnErrorFn.Invoke(Context, LastResult.Errors))
+                    if (!_settings.OnErrorFn.Invoke(Context, LastResult.Errors.ToArray()))
                     {
                         _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
                         break;
@@ -212,18 +212,18 @@ namespace EtlLib.Pipeline
             return new EtlPipelineWithScalarResultContext<TOut>(this, _context);
         }
 
-        public static IEtlPipeline Create(Action<EtlPipelineSettings> cfg)
+        public static IEtlPipeline Create(Action<EtlPipelineSettings> settings)
         {
-            var settings = new EtlPipelineSettings();
-            cfg(settings);
+            var s = new EtlPipelineSettings();
+            settings(s);
 
             var config = new EtlPipelineConfig();
-            settings.ConfigInitializer(config);
+            s.ConfigInitializer(config);
 
-            var context = settings.ExistingContext ?? new EtlPipelineContext(config);
-            settings.ContextInitializer(context);
+            var context = s.ExistingContext ?? new EtlPipelineContext(config);
+            s.ContextInitializer(context);
 
-            return new EtlPipeline(settings, context);
+            return new EtlPipeline(s, context);
         }
     }
 

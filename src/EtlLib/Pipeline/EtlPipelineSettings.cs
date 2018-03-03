@@ -12,7 +12,7 @@ namespace EtlLib.Pipeline
         public Action<EtlPipelineConfig> ConfigInitializer { get; set; }
         public List<ObjectPoolSettings> ObjectPoolRegistrations { get; }
         public bool ThrowOnError { get; set; }
-        public Func<EtlPipelineContext, IEnumerable<EtlOperationError>, bool> OnErrorFn { get; set; }
+        public Func<EtlPipelineContext, EtlOperationError[], bool> OnErrorFn { get; set; }
         public EtlPipelineContext ExistingContext { get; set; }
 
         public EtlPipelineSettings()
@@ -53,7 +53,7 @@ namespace EtlLib.Pipeline
             return this;
         }
 
-        public EtlPipelineSettings OnError(Func<EtlPipelineContext, IEnumerable<EtlOperationError>, bool> onError)
+        public EtlPipelineSettings OnError(Func<EtlPipelineContext, EtlOperationError[], bool> onError)
         {
             OnErrorFn = onError;
             return this;
