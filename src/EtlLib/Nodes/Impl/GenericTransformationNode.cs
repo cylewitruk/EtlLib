@@ -22,7 +22,14 @@ namespace EtlLib.Nodes.Impl
         {
             foreach (var item in Input)
             {
-                Emit(_transform(_stateDictionary, item));
+                try
+                {
+                    Emit(_transform(_stateDictionary, item));
+                }
+                catch (Exception e)
+                {
+                    RaiseError(e, item);
+                }
             }
 
             TypedEmitter.SignalEnd();
@@ -46,7 +53,14 @@ namespace EtlLib.Nodes.Impl
         {
             foreach (var item in Input)
             {
-                Emit(_transform(_state, item));
+                try
+                {
+                    Emit(_transform(_state, item));
+                }
+                catch (Exception e)
+                {
+                    RaiseError(e, item);
+                }
             }
 
             TypedEmitter.SignalEnd();

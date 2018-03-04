@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 using FluentAssertions;
 using Xunit;
 
-namespace EtlLib.UnitTests.EtlPipeline
+namespace EtlLib.UnitTests.EtlPipelineTests
 {
     public class DbConnectionFactoryTests
     {

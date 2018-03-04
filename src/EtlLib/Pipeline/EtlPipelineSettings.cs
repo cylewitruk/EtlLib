@@ -12,7 +12,7 @@ namespace EtlLib.Pipeline
         public Action<EtlPipelineConfig> ConfigInitializer { get; set; }
         public List<ObjectPoolSettings> ObjectPoolRegistrations { get; }
         public bool ThrowOnError { get; set; }
-        public Action<EtlPipelineContext, IEtlOperation, Exception> OnError { get; set; }
+        public Func<EtlPipelineContext, EtlOperationError[], bool> OnErrorFn { get; set; }
         public EtlPipelineContext ExistingContext { get; set; }
 
         public EtlPipelineSettings()
@@ -20,6 +20,7 @@ namespace EtlLib.Pipeline
             ContextInitializer = context => { };
             ConfigInitializer = config => { };
             ObjectPoolRegistrations = new List<ObjectPoolSettings>();
+            OnErrorFn = (context, errors) => false;
         }
 
         public EtlPipelineSettings Named(string name)
@@ -52,9 +53,9 @@ namespace EtlLib.Pipeline
             return this;
         }
 
-        public EtlPipelineSettings OnException(Action<EtlPipelineContext, IEtlOperation, Exception> err)
+        public EtlPipelineSettings OnError(Func<EtlPipelineContext, EtlOperationError[], bool> onError)
         {
-            OnError = err;
+            OnErrorFn = onError;
             return this;
         }
 

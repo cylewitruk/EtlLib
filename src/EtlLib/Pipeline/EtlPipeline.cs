@@ -18,8 +18,7 @@ namespace EtlLib.Pipeline
         private readonly ILogger _log;
         private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
-        private bool _throwOnException;
-        private Action<EtlPipelineContext, IEtlOperation, Exception> _onException;
+        private Func<EtlPipelineContext, bool> _currentPredicate;
 
         public string Name { get; }
         public EtlPipelineContext Context => _context;
@@ -35,18 +34,6 @@ namespace EtlLib.Pipeline
             _executionResults = new Dictionary<IEtlOperation, IEtlOperationResult>();
 
             _settings = settings;
-        }
-
-        private EtlPipeline ThrowOnException()
-        {
-            _throwOnException = true;
-            return this;
-        }
-
-        private EtlPipeline OnException(Action<EtlPipelineContext, IEtlOperation, Exception> err)
-        {
-            _onException = err;
-            return this;
         }
 
         public EtlPipelineResult Execute()
@@ -79,11 +66,23 @@ namespace EtlLib.Pipeline
                         Debugger.Break();
 
                     _log.Error($"An error occured while executing step #{i+1} '{_steps[i].Name}' ({_steps[i].GetType().Name}): {e}");
-                    _onException?.Invoke(Context, _steps[i], e);
-                    if (_throwOnException)
-                        throw;
+                    var error = new EtlOperationError(_steps[i], e);
+                    if (!_settings.OnErrorFn.Invoke(Context, new[] {error}))
+                    {
+                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
+                        break;
+                    }
                 }
-                
+
+                if (LastResult?.Errors.Count > 0)
+                {
+                    Context.ReportErrors(LastResult.Errors);
+                    if (!_settings.OnErrorFn.Invoke(Context, LastResult.Errors.ToArray()))
+                    {
+                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
+                        break;
+                    }
+                }
 
                 if (_steps[i] is IDisposable disposable)
                 {
@@ -197,36 +196,73 @@ namespace EtlLib.Pipeline
             return RegisterOperation(parellelOperation);
         }
 
+        public IEtlPipeline RunIf(Func<EtlPipelineContext, bool> predicate, Func<EtlPipelineContext, IEtlOperation> operation)
+        {
+            var method = new Action(() =>
+            {
+                if (!predicate(Context))
+                    return;
+
+                var op = operation(Context);
+                op.Execute(Context);
+            });
+
+            Run(new DynamicInvokeEtlOperation(method).Named("Conditional Execution"));
+            return this;
+        }
+
+        public IEtlPipeline If(Func<EtlPipelineContext, bool> predicate, Action<IEtlPipeline> pipeline)
+        {
+            _currentPredicate = predicate;
+            pipeline(this);
+            _currentPredicate = null;
+            return this;
+        }
+
         private IEtlPipeline RegisterOperation(IEtlOperation operation)
         {
-            _steps.Add(operation);
+            
+            AddOperation(operation);
             return this;
         }
 
         private IEtlPipelineEnumerableResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithEnumerableResult<TOut> operation)
         {
-            _steps.Add(operation);
+            AddOperation(operation);
             return new EtlPipelineEnumerableResultContext<TOut>(this, _context);
         }
 
         private IEtlPipelineWithScalarResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithScalarResult<TOut> operation)
         {
-            _steps.Add(operation);
+            AddOperation(operation);
             return new EtlPipelineWithScalarResultContext<TOut>(this, _context);
         }
 
-        public static IEtlPipeline Create(Action<EtlPipelineSettings> cfg)
+        private void AddOperation(IEtlOperation operation)
         {
-            var settings = new EtlPipelineSettings();
-            cfg(settings);
+            if (_currentPredicate != null)
+            {
+                var conditionalOperation = new ConditionalEtlOperation(_currentPredicate, operation);
+                _steps.Add(conditionalOperation);
+            }
+            else
+            {
+                _steps.Add(operation);
+            }
+        }
+
+        public static IEtlPipeline Create(Action<EtlPipelineSettings> settings)
+        {
+            var s = new EtlPipelineSettings();
+            settings(s);
 
             var config = new EtlPipelineConfig();
-            settings.ConfigInitializer(config);
+            s.ConfigInitializer(config);
 
-            var context = settings.ExistingContext ?? new EtlPipelineContext(config);
-            settings.ContextInitializer(context);
+            var context = s.ExistingContext ?? new EtlPipelineContext(config);
+            s.ContextInitializer(context);
 
-            return new EtlPipeline(settings, context);
+            return new EtlPipeline(s, context);
         }
     }
 

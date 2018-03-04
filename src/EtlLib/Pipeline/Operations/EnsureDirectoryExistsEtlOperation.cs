@@ -17,7 +17,7 @@ namespace EtlLib.Pipeline.Operations
 
             log.Debug($"Ensuring existance of directory '{_path}'.");
             Directory.CreateDirectory(_path);
-            return new EtlOperationResult(true);
+            return new EtlOperationResult(Directory.Exists(_path));
         }
     }
 }
