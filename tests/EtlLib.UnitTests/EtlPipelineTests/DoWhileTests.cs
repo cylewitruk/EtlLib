@@ -6,7 +6,7 @@ namespace EtlLib.UnitTests.EtlPipelineTests
 {
     public class DoWhileTests
     {
-        [Fact]
+        //[Fact]
         public void Do_while_test()
         {
             /*

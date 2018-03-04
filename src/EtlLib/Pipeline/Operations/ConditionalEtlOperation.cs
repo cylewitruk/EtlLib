@@ -15,9 +15,16 @@ namespace EtlLib.Pipeline.Operations
 
         public override IEtlOperationResult Execute(EtlPipelineContext context)
         {
-            return !_predicate(context) 
-                ? new EtlOperationResult(true) 
-                : _operation.Execute(context);
+            var log = context.GetLogger(GetType().Name);
+
+            if (!_predicate(context))
+            {
+                log.Info($"Predicate evaluated to false for running of '{Name}', skipping.");
+                return new EtlOperationResult(true);
+            }
+
+            log.Info($"Predicate evaluated to true for running of '{Name}', executing.");
+            return _operation.Execute(context);
         }
     }
 }

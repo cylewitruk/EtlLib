@@ -18,6 +18,8 @@ namespace EtlLib.Pipeline
         private readonly ILogger _log;
         private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
+        private Func<EtlPipelineContext, bool> _currentPredicate;
+
         public string Name { get; }
         public EtlPipelineContext Context => _context;
         public IEtlOperationResult LastResult { get; private set; }
@@ -209,22 +211,44 @@ namespace EtlLib.Pipeline
             return this;
         }
 
+        public IEtlPipeline If(Func<EtlPipelineContext, bool> predicate, Action<IEtlPipeline> pipeline)
+        {
+            _currentPredicate = predicate;
+            pipeline(this);
+            _currentPredicate = null;
+            return this;
+        }
+
         private IEtlPipeline RegisterOperation(IEtlOperation operation)
         {
-            _steps.Add(operation);
+            
+            AddOperation(operation);
             return this;
         }
 
         private IEtlPipelineEnumerableResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithEnumerableResult<TOut> operation)
         {
-            _steps.Add(operation);
+            AddOperation(operation);
             return new EtlPipelineEnumerableResultContext<TOut>(this, _context);
         }
 
         private IEtlPipelineWithScalarResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithScalarResult<TOut> operation)
         {
-            _steps.Add(operation);
+            AddOperation(operation);
             return new EtlPipelineWithScalarResultContext<TOut>(this, _context);
+        }
+
+        private void AddOperation(IEtlOperation operation)
+        {
+            if (_currentPredicate != null)
+            {
+                var conditionalOperation = new ConditionalEtlOperation(_currentPredicate, operation);
+                _steps.Add(conditionalOperation);
+            }
+            else
+            {
+                _steps.Add(operation);
+            }
         }
 
         public static IEtlPipeline Create(Action<EtlPipelineSettings> settings)

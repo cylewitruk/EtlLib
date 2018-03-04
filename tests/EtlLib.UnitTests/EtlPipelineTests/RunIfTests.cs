@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices.ComTypes;
 using EtlLib.Pipeline;
 using FluentAssertions;
 using Xunit;
@@ -8,26 +9,103 @@ namespace EtlLib.UnitTests.EtlPipelineTests
     public class RunIfTests
     {
         [Fact]
-        public void Pipeline_addition_if_test()
-        {/*
-            var wasRun = false;
+        public void Pipeline_if_clause_runs_contents_if_predicate_returns_true()
+        {   
+            var wasRun1 = false;
+            var wasRun2 = false;
+            var wasRunBefore = false;
+            var wasRunAfter = false;
 
-            EtlPipeline.Create(settings => settings
+            var context = new EtlPipelineContext();
+
+            var pipeline = EtlPipeline.Create(settings => settings
+                .UseExistingContext(context)
                 .Named("Run If Test"))
-                .If(ctx => ctx.State["hello"] == "world", pipeline =>
+                .Run(ctx => new ActionEtlOperation(ctx2 => 
                 {
-                    pipeline
-                        .Run(ctx => new ActionEtlOperation(context =>
+                    wasRunBefore = true;
+                    return true;
+                }))
+                .If(ctx => (string) ctx.State["hello"] == "world", p =>
+                {
+                    p
+                        .Run(ctx => new ActionEtlOperation(ctx2 =>
                         {
-                            wasRun = true;
+                            wasRun1 = true;
                             return true;
-                        }));
-                });*/
-            throw new NotImplementedException();
+                        }).Named("If 1"))
+                        .Run(ctx => new ActionEtlOperation(ctx2 =>
+                        {
+                            wasRun2 = true;
+                            return true;
+                        }).Named("If 2"));
+                })
+                .Run(ctx => new ActionEtlOperation(ctx2 =>
+                {
+                    wasRunAfter = true;
+                    return true;
+                }));
+
+            context.State["hello"] = "world";
+
+            pipeline.Execute();
+
+            wasRunBefore.Should().BeTrue();
+            wasRun1.Should().BeTrue();
+            wasRun2.Should().BeTrue();
+            wasRunAfter.Should().BeTrue();
         }
 
         [Fact]
-        public void Pipeline_runif_does_not_run_if_predicate_returns_false()
+        public void Pipeline_if_clause_does_not_run_contents_if_predicate_returns_false()
+        {
+            var wasRun1 = false;
+            var wasRun2 = false;
+            var wasRunBefore = false;
+            var wasRunAfter = false;
+
+            var context = new EtlPipelineContext();
+
+            var pipeline = EtlPipeline.Create(settings => settings
+                    .UseExistingContext(context)
+                    .Named("Run If Test"))
+                .Run(ctx => new ActionEtlOperation(ctx2 =>
+                {
+                    wasRunBefore = true;
+                    return true;
+                }))
+                .If(ctx => (string)ctx.State["hello"] == "not world", p =>
+                {
+                    p
+                        .Run(ctx => new ActionEtlOperation(ctx2 =>
+                        {
+                            wasRun1 = true;
+                            return true;
+                        }).Named("If 1"))
+                        .Run(ctx => new ActionEtlOperation(ctx2 =>
+                        {
+                            wasRun2 = true;
+                            return true;
+                        }).Named("If 2"));
+                })
+                .Run(ctx => new ActionEtlOperation(ctx2 =>
+                {
+                    wasRunAfter = true;
+                    return true;
+                }));
+
+            context.State["hello"] = "world";
+
+            pipeline.Execute();
+
+            wasRunBefore.Should().BeTrue();
+            wasRun1.Should().BeFalse();
+            wasRun2.Should().BeFalse();
+            wasRunAfter.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Pipeline_runif_does_not_run_operation_if_predicate_returns_false()
         {
             var wasRun = false;
 
@@ -50,7 +128,7 @@ namespace EtlLib.UnitTests.EtlPipelineTests
         }
 
         [Fact]
-        public void Pipeline_runif_runs_if_predicate_returns_true()
+        public void Pipeline_runif_runs_operation_if_predicate_returns_true()
         {
             var wasRun = false;
 
