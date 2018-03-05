@@ -54,44 +54,15 @@ namespace EtlLib.Pipeline
             {
                 _log.Info($"Executing step #{i+1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
 
-                try
-                {
-                    _executionResults[_steps[i]]
-                        = LastResult
-                        = _steps[i].Execute(_context);
-                }
-                catch (Exception e)
-                {
-                    if (EtlLibConfig.EnableDebug)
-                        Debugger.Break();
+                var operation = _steps[i];
+                var shouldContinue = ExecuteOperation(operation, out var result);
+                _executionResults[_steps[i]] = LastResult = result;
 
-                    _log.Error($"An error occured while executing step #{i+1} '{_steps[i].Name}' ({_steps[i].GetType().Name}): {e}");
-                    var error = new EtlOperationError(_steps[i], e);
-                    if (!_settings.OnErrorFn.Invoke(Context, new[] {error}))
-                    {
-                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
-                        break;
-                    }
-                }
-
-                if (LastResult?.Errors.Count > 0)
+                if (!shouldContinue)
                 {
-                    Context.ReportErrors(LastResult.Errors);
-                    if (!_settings.OnErrorFn.Invoke(Context, LastResult.Errors.ToArray()))
-                    {
-                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
-                        break;
-                    }
+                    _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
+                    break;
                 }
-
-                if (_steps[i] is IDisposable disposable)
-                {
-                    _log.Debug("Disposing of resources used by step.");
-                    disposable.Dispose();
-                }
-
-                _log.Debug("Cleaning up (globally).");
-                GC.Collect();
             }
 
             _log.Debug("Deallocating all object pools:");
@@ -102,6 +73,47 @@ namespace EtlLib.Pipeline
             _context.ObjectPool.DeAllocate();
 
             return null;
+        }
+
+        private bool ExecuteOperation(IEtlOperation operation, out IEtlOperationResult result)
+        {
+            result = null;
+            try
+            {
+                result = operation.Execute(_context);
+            }
+            catch (Exception e)
+            {
+                if (EtlLibConfig.EnableDebug)
+                    Debugger.Break();
+
+                _log.Error($"An error occured while executing operation '{operation.Name}' ({operation.GetType().Name}): {e}");
+                var error = new EtlOperationError(operation, e);
+                if (!_settings.OnErrorFn.Invoke(Context, new[] { error }))
+                {
+                    return false;
+                }
+            }
+
+            if (result?.Errors.Count > 0)
+            {
+                Context.ReportErrors(result.Errors);
+                if (!_settings.OnErrorFn.Invoke(Context, result.Errors.ToArray()))
+                {
+                    return false;
+                }
+            }
+
+            if (operation is IDisposable disposable)
+            {
+                _log.Debug("Disposing of resources used by step.");
+                disposable.Dispose();
+            }
+
+            _log.Debug("Cleaning up (globally).");
+            GC.Collect();
+
+            return true;
         }
 
         private void PrintHeader()
@@ -264,6 +276,8 @@ namespace EtlLib.Pipeline
 
             return new EtlPipeline(s, context);
         }
+
+        public IEnumerable<IEtlOperation> GetOperations() => _steps;
     }
 
     public interface IEtlPipelineWithScalarResultContext<out TOut>
@@ -369,5 +383,28 @@ namespace EtlLib.Pipeline
 
             return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named($"Foreach {typeof(TOut).Name} in Result"));
         }
+    }
+
+    public interface IEtlOperationCollection
+    {
+        IEnumerable<IEtlOperation> GetOperations();
+    }
+
+    public class EtlOperationGroup : IEtlOperationCollection
+    {
+        private readonly List<IEtlOperation> _operations;
+
+        public EtlOperationGroup(params IEtlOperation[] operations)
+        {
+            _operations = new List<IEtlOperation>(operations);
+        }
+
+        public EtlOperationGroup AddOperation(IEtlOperation operation)
+        {
+            _operations.Add(operation);
+            return this;
+        }
+
+        public IEnumerable<IEtlOperation> GetOperations() => _operations;
     }
 }

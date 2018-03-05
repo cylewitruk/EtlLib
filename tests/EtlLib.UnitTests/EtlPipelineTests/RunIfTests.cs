@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices.ComTypes;
-using EtlLib.Pipeline;
+﻿using EtlLib.Pipeline;
 using FluentAssertions;
 using Xunit;
 
