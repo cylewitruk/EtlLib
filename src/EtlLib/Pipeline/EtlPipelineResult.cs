@@ -4,7 +4,7 @@ using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline
 {
-    public class EtlPipelineResult
+    public class EtlPipelineResult : IEtlOperationResult
     {
         public bool IsSuccess { get; }
         public IReadOnlyCollection<EtlOperationError> Errors { get; }

@@ -8,7 +8,7 @@ using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline
 {
-    public sealed class EtlPipeline : IEtlPipeline
+    public sealed class EtlPipeline : IEtlPipeline, IEtlOperation
     {
         private const string LoggerName = "EtlLib.EtlPipeline";
 
@@ -20,7 +20,19 @@ namespace EtlLib.Pipeline
 
         private Func<EtlPipelineContext, bool> _currentPredicate;
 
-        public string Name { get; }
+        public string Name { get; private set; }
+
+        IEtlOperation IEtlOperation.Named(string name)
+        {
+            Name = name;
+            return this;
+        }
+
+        IEtlOperationResult IEtlOperation.Execute(EtlPipelineContext context)
+        {
+            return InternalExecute(context);
+        }
+
         public EtlPipelineContext Context => _context;
         public IEtlOperationResult LastResult { get; private set; }
 
@@ -38,6 +50,11 @@ namespace EtlLib.Pipeline
 
         public EtlPipelineResult Execute()
         {
+            return InternalExecute(Context);
+        }
+
+        private EtlPipelineResult InternalExecute(EtlPipelineContext context)
+        {
             PrintHeader();
 
             if (_settings.ObjectPoolRegistrations.Count > 0)
@@ -46,21 +63,23 @@ namespace EtlLib.Pipeline
                 foreach (var pool in _settings.ObjectPoolRegistrations)
                 {
                     _log.Info($" * Creating pool for '{pool.Type.Name}' (InitialSize={pool.InitialSize}, AutoGrow={pool.AutoGrow})");
-                    _context.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
+                    context.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
                 }
             }
 
             for (var i = 0; i < _steps.Count; i++)
             {
-                _log.Info($"Executing step #{i+1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
+                _log.Info($"Executing step #{i + 1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
 
                 var operation = _steps[i];
-                var shouldContinue = ExecuteOperation(operation, out var result);
-                _executionResults[_steps[i]] = LastResult = result;
 
-                if (!shouldContinue)
+                try
                 {
-                    _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
+                    _executionResults[_steps[i]] = LastResult = ExecuteOperation(operation, context);
+                }
+                catch (PipelineAbortException e)
+                {
+                    _log.Warn($"Error handling has indicated that the ETL process should be halted after error, terminating.  Message: {e.Message}");
                     break;
                 }
             }
@@ -70,50 +89,69 @@ namespace EtlLib.Pipeline
             {
                 _log.Debug($" * ObjectPool<{pool.Type.Name}> => Referenced: {pool.Referenced}, Free: {pool.Free}");
             }
-            _context.ObjectPool.DeAllocate();
+            context.ObjectPool.DeAllocate();
 
             return null;
         }
 
-        private bool ExecuteOperation(IEtlOperation operation, out IEtlOperationResult result)
+        private IEtlOperationResult ExecuteOperation(IEtlOperation operation, EtlPipelineContext context)
         {
-            result = null;
+            IEtlOperationResult result = null;
             try
             {
-                result = operation.Execute(_context);
+                if (operation is IEtlOperationCollection collection)
+                {
+                    var multiResult = new EtlOperationResult(true);
+                    foreach (var op in collection.GetOperations())
+                    {
+                        _executionResults[op] = LastResult = ExecuteOperation(op, context);
+                        multiResult
+                            .WithErrors(LastResult.Errors)
+                            .QuiesceSuccess(LastResult.IsSuccess);
+                    }
+
+                    return multiResult;
+                }
+                else
+                {
+                    result = operation.Execute(context);
+                }
             }
             catch (Exception e)
             {
                 if (EtlLibConfig.EnableDebug)
                     Debugger.Break();
 
-                _log.Error($"An error occured while executing operation '{operation.Name}' ({operation.GetType().Name}): {e}");
+                _log.Error(
+                    $"An error occured while executing operation '{operation.Name}' ({operation.GetType().Name}): {e}");
                 var error = new EtlOperationError(operation, e);
-                if (!_settings.OnErrorFn.Invoke(Context, new[] { error }))
+                if (!_settings.OnErrorFn.Invoke(context, new[] {error}))
                 {
-                    return false;
+                    throw new PipelineAbortException(error);
                 }
             }
-
-            if (result?.Errors.Count > 0)
+            finally
             {
-                Context.ReportErrors(result.Errors);
-                if (!_settings.OnErrorFn.Invoke(Context, result.Errors.ToArray()))
+                if (result?.Errors.Count > 0)
                 {
-                    return false;
+                    context.ReportErrors(result.Errors);
+                    if (!_settings.OnErrorFn.Invoke(context, result.Errors.ToArray()))
+                    {
+                        throw new PipelineAbortException(result.Errors);
+                    }
                 }
+
+                if (operation is IDisposable disposable)
+                {
+                    _log.Debug("Disposing of resources used by step.");
+                    disposable.Dispose();
+                }
+
+                _log.Debug("Cleaning up (globally).");
+                GC.Collect();
             }
 
-            if (operation is IDisposable disposable)
-            {
-                _log.Debug("Disposing of resources used by step.");
-                disposable.Dispose();
-            }
-
-            _log.Debug("Cleaning up (globally).");
-            GC.Collect();
-
-            return true;
+            return result;
         }
 
         private void PrintHeader()
