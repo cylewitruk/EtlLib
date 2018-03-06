@@ -5,7 +5,7 @@ using EtlLib.Pipeline.Operations;
 
 namespace EtlLib.Pipeline
 {
-    public interface IEtlPipeline : IEtlOperationCollection
+    public interface IEtlPipeline : IEtlOperationCollection, IEtlOperation
     {
         EtlPipelineContext Context { get; }
         IEtlOperationResult LastResult { get; }
