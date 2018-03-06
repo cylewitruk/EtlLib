@@ -12,21 +12,27 @@ namespace EtlLib.Pipeline
     {
         private const string LoggerName = "EtlLib.EtlPipeline";
 
-        private readonly EtlPipelineContext _context;
         private readonly EtlPipelineSettings _settings;
         private readonly List<IEtlOperation> _steps;
         private readonly ILogger _log;
         private readonly Dictionary<IEtlOperation, IEtlOperationResult> _executionResults;
 
+        private IEtlOperation _currentlyExecutingOperation;
         private Func<EtlPipelineContext, bool> _currentPredicate;
 
-        public string Name { get; }
-        public EtlPipelineContext Context => _context;
+        public string Name { get; private set; }
+        public EtlPipelineContext Context { get; }
         public IEtlOperationResult LastResult { get; private set; }
+
+        IEtlOperation IEtlOperation.Named(string name)
+        {
+            Name = name;
+            return this;
+        }
 
         private EtlPipeline(EtlPipelineSettings settings, EtlPipelineContext context)
         {
-            _context = context;
+            Context = context;
             Name = settings.Name;
 
             _log = context.GetLogger(LoggerName);
@@ -38,7 +44,19 @@ namespace EtlLib.Pipeline
 
         public EtlPipelineResult Execute()
         {
+            return InternalExecute(Context);
+        }
+
+        IEtlOperationResult IEtlOperation.Execute(EtlPipelineContext context)
+        {
+            return InternalExecute(context);
+        }
+
+        private EtlPipelineResult InternalExecute(EtlPipelineContext context)
+        {
             PrintHeader();
+            var result = new EtlPipelineResult();
+            var stopwatch = Stopwatch.StartNew();
 
             if (_settings.ObjectPoolRegistrations.Count > 0)
             {
@@ -46,45 +64,93 @@ namespace EtlLib.Pipeline
                 foreach (var pool in _settings.ObjectPoolRegistrations)
                 {
                     _log.Info($" * Creating pool for '{pool.Type.Name}' (InitialSize={pool.InitialSize}, AutoGrow={pool.AutoGrow})");
-                    _context.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
+                    context.ObjectPool.RegisterAndInitializeObjectPool(pool.Type, pool.InitialSize, pool.AutoGrow);
                 }
             }
 
             for (var i = 0; i < _steps.Count; i++)
             {
-                _log.Info($"Executing step #{i+1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
+                _log.Info($"Executing step #{i + 1} ({_steps[i].GetType().Name}): '{_steps[i].Name}'");
+
+                var operation = _steps[i];
 
                 try
                 {
-                    _executionResults[_steps[i]]
-                        = LastResult
-                        = _steps[i].Execute(_context);
+                    _executionResults[_steps[i]] = LastResult = ExecuteOperation(operation, context);
                 }
-                catch (Exception e)
+                catch (PipelineAbortException e)
                 {
-                    if (EtlLibConfig.EnableDebug)
-                        Debugger.Break();
+                    result
+                        .WithErrors(e.Errors)
+                        .AbortedOn(_currentlyExecutingOperation)
+                        .QuiesceIsSuccess(false);
 
-                    _log.Error($"An error occured while executing step #{i+1} '{_steps[i].Name}' ({_steps[i].GetType().Name}): {e}");
-                    var error = new EtlOperationError(_steps[i], e);
-                    if (!_settings.OnErrorFn.Invoke(Context, new[] {error}))
+                    _log.Warn($"Error handling has indicated that the ETL process should be halted after error, terminating.  Message: {e.Message}");
+                    break;
+                }
+            }
+
+            _log.Debug("Deallocating all object pools:");
+            foreach (var pool in Context.ObjectPool.Pools)
+            {
+                _log.Debug($" * ObjectPool<{pool.Type.Name}> => Referenced: {pool.Referenced}, Free: {pool.Free}");
+            }
+            context.ObjectPool.DeAllocate();
+            stopwatch.Stop();
+
+            return result.WithTotalRunTime(stopwatch.Elapsed);
+        }
+
+        private IEtlOperationResult ExecuteOperation(IEtlOperation operation, EtlPipelineContext context)
+        {
+            _currentlyExecutingOperation = operation;
+
+            IEtlOperationResult result = null;
+            try
+            {
+                if (operation is IEtlOperationCollection collection)
+                {
+                    var multiResult = new EtlOperationResult(true);
+                    foreach (var op in collection.GetOperations())
                     {
-                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
-                        break;
+                        _executionResults[op] = LastResult = ExecuteOperation(op, context);
+                        multiResult
+                            .WithErrors(LastResult.Errors)
+                            .QuiesceSuccess(LastResult.IsSuccess);
+                    }
+
+                    return multiResult;
+                }
+                else
+                {
+                    result = operation.Execute(context);
+                }
+            }
+            catch (Exception e)
+            {
+                if (EtlLibConfig.EnableDebug)
+                    Debugger.Break();
+
+                _log.Error(
+                    $"An error occured while executing operation '{operation.Name}' ({operation.GetType().Name}): {e}");
+                var error = new EtlOperationError(operation, e);
+                if (!_settings.OnErrorFn.Invoke(context, new[] {error}))
+                {
+                    throw new PipelineAbortException(operation, error);
+                }
+            }
+            finally
+            {
+                if (result?.Errors.Count > 0)
+                {
+                    context.ReportErrors(result.Errors);
+                    if (!_settings.OnErrorFn.Invoke(context, result.Errors.ToArray()))
+                    {
+                        throw new PipelineAbortException(operation, result.Errors);
                     }
                 }
 
-                if (LastResult?.Errors.Count > 0)
-                {
-                    Context.ReportErrors(LastResult.Errors);
-                    if (!_settings.OnErrorFn.Invoke(Context, LastResult.Errors.ToArray()))
-                    {
-                        _log.Info("Error handling has indicated that the ETL process should be halted after error.  Terminating.");
-                        break;
-                    }
-                }
-
-                if (_steps[i] is IDisposable disposable)
+                if (operation is IDisposable disposable)
                 {
                     _log.Debug("Disposing of resources used by step.");
                     disposable.Dispose();
@@ -94,14 +160,7 @@ namespace EtlLib.Pipeline
                 GC.Collect();
             }
 
-            _log.Debug("Deallocating all object pools:");
-            foreach (var pool in _context.ObjectPool.Pools)
-            {
-                _log.Debug($" * ObjectPool<{pool.Type.Name}> => Referenced: {pool.Referenced}, Free: {pool.Free}");
-            }
-            _context.ObjectPool.DeAllocate();
-
-            return null;
+            return result;
         }
 
         private void PrintHeader()
@@ -120,7 +179,7 @@ namespace EtlLib.Pipeline
         public IEtlPipeline Run(Action<EtlPipelineContext, IEtlProcessBuilder> builder)
         {
             var b = EtlProcessBuilder.Create();
-            builder(_context, b);
+            builder(Context, b);
 
             return this;
         }
@@ -132,7 +191,7 @@ namespace EtlLib.Pipeline
 
         public IEtlPipeline Run(Func<EtlPipelineContext, IEtlOperation> ctx)
         {
-            return RegisterOperation(ctx(_context));
+            return RegisterOperation(ctx(Context));
         }
 
         public IEtlPipelineEnumerableResultContext<TOut> RunWithResult<TOut>(IEtlOperationWithEnumerableResult<TOut> operation)
@@ -144,7 +203,7 @@ namespace EtlLib.Pipeline
             Func<EtlPipelineContext, IEtlOperationWithEnumerableResult<TOut>> ctx,
             Action<IEtlPipelineEnumerableResultContext<TOut>> result)
         {
-            var op = ctx(_context);
+            var op = ctx(Context);
             var ret = RegisterOperation(op);
             result(ret);
             return this;
@@ -160,7 +219,7 @@ namespace EtlLib.Pipeline
         public IEtlPipelineEnumerableResultContext<TOut> RunWithResult<TOut>(
             Func<EtlPipelineContext, IEtlOperationWithEnumerableResult<TOut>> operation)
         {
-            return RegisterOperation(operation(_context));
+            return RegisterOperation(operation(Context));
         }
 
         public IEtlPipeline Run<TOut>(IEtlOperationWithScalarResult<TOut> operation, Action<IEtlPipelineWithScalarResultContext<TOut>> result)
@@ -174,7 +233,7 @@ namespace EtlLib.Pipeline
             Func<EtlPipelineContext, IEtlOperationWithScalarResult<TOut>> ctx,
             Action<IEtlPipelineWithScalarResultContext<TOut>> result)
         {
-            var op = ctx(_context);
+            var op = ctx(Context);
             var ret = RegisterOperation(op);
             result(ret);
             return this;
@@ -187,7 +246,7 @@ namespace EtlLib.Pipeline
 
         public IEtlPipeline RunParallel(Func<EtlPipelineContext, IEnumerable<IEtlOperation>> ctx)
         {
-            var operations = ctx(_context).ToArray();
+            var operations = ctx(Context).ToArray();
             var parellelOperation =
                 new ParallelOperation(
                     $"Executing steps in parellel => [{string.Join(", ", operations.Select(x => x.Name))}]",
@@ -229,13 +288,13 @@ namespace EtlLib.Pipeline
         private IEtlPipelineEnumerableResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithEnumerableResult<TOut> operation)
         {
             AddOperation(operation);
-            return new EtlPipelineEnumerableResultContext<TOut>(this, _context);
+            return new EtlPipelineEnumerableResultContext<TOut>(this, Context);
         }
 
         private IEtlPipelineWithScalarResultContext<TOut> RegisterOperation<TOut>(IEtlOperationWithScalarResult<TOut> operation)
         {
             AddOperation(operation);
-            return new EtlPipelineWithScalarResultContext<TOut>(this, _context);
+            return new EtlPipelineWithScalarResultContext<TOut>(this, Context);
         }
 
         private void AddOperation(IEtlOperation operation)
@@ -264,6 +323,8 @@ namespace EtlLib.Pipeline
 
             return new EtlPipeline(s, context);
         }
+
+        public IEnumerable<IEtlOperation> GetOperations() => _steps;
     }
 
     public interface IEtlPipelineWithScalarResultContext<out TOut>
@@ -369,5 +430,28 @@ namespace EtlLib.Pipeline
 
             return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named($"Foreach {typeof(TOut).Name} in Result"));
         }
+    }
+
+    public interface IEtlOperationCollection
+    {
+        IEnumerable<IEtlOperation> GetOperations();
+    }
+
+    public class EtlOperationGroup : IEtlOperationCollection
+    {
+        private readonly List<IEtlOperation> _operations;
+
+        public EtlOperationGroup(params IEtlOperation[] operations)
+        {
+            _operations = new List<IEtlOperation>(operations);
+        }
+
+        public EtlOperationGroup AddOperation(IEtlOperation operation)
+        {
+            _operations.Add(operation);
+            return this;
+        }
+
+        public IEnumerable<IEtlOperation> GetOperations() => _operations;
     }
 }

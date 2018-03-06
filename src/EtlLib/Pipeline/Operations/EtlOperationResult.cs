@@ -23,7 +23,7 @@ namespace EtlLib.Pipeline.Operations
     {
         private readonly List<EtlOperationError> _errors;
 
-        public bool IsSuccess { get; }
+        public bool IsSuccess { get; private set; }
         public IReadOnlyCollection<EtlOperationError> Errors => _errors;
 
         public EtlOperationResult(bool isSuccess)
@@ -54,6 +54,14 @@ namespace EtlLib.Pipeline.Operations
         public EtlOperationResult WithError(IEtlOperation sourceOperation, Exception exception)
         {
             _errors.Add(new EtlOperationError(sourceOperation, exception));
+            return this;
+        }
+
+        public EtlOperationResult QuiesceSuccess(bool success)
+        {
+            if (IsSuccess && !success)
+                IsSuccess = false;
+
             return this;
         }
     }
