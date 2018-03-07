@@ -11,6 +11,7 @@ namespace EtlLib.Nodes.CsvFiles
     {
         private string _filePath;
         private bool _includeHeader;
+        private bool _quoteAllFields;
         private int _writtenRowCount;
         private Encoding _encoding;
 
@@ -34,6 +35,12 @@ namespace EtlLib.Nodes.CsvFiles
             return this;
         }
 
+        public CsvWriterNode QuoteAllFields(bool quoteAllFields = true)
+        {
+            _quoteAllFields = quoteAllFields;
+            return this;
+        }
+
         public override void OnExecute(EtlPipelineContext context)
         {
             var log = context.GetLogger("EtlLib.Nodes.CsvWriterNode");
@@ -44,6 +51,7 @@ namespace EtlLib.Nodes.CsvFiles
             using (var sw = new StreamWriter(file, _encoding))
             using (var writer = new CsvWriter(sw))
             {
+                writer.Configuration.QuoteAllFields = _quoteAllFields;
                 foreach (var row in Input)
                 {
                     if (first && _includeHeader)

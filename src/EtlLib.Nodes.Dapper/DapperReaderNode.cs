@@ -79,11 +79,17 @@ namespace EtlLib.Nodes.Dapper
             }
 
             using (var con = _createConnection())
-            using (var trx = con.BeginTransaction(_isolationLevel))
             {
-                foreach (var result in con.Query<TOut>(_sql, _dynamicParameters ?? _param, trx, _buffered, _timeoutInSeconds, _commandType))
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+
+                using (var trx = con.BeginTransaction(_isolationLevel))
                 {
-                    Emit(result);
+                    foreach (var result in con.Query<TOut>(_sql, _dynamicParameters ?? _param, trx, _buffered,
+                        _timeoutInSeconds, _commandType))
+                    {
+                        Emit(result);
+                    }
                 }
             }
 
