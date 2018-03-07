@@ -36,5 +36,6 @@ namespace EtlLib.Pipeline
         IEtlPipeline RunIf(Func<EtlPipelineContext, bool> predicate, Func<EtlPipelineContext, IEtlOperation> operation);
 
         IEtlPipeline If(Func<EtlPipelineContext, bool> predicate, Action<IEtlPipeline> pipeline);
+        IDoWhileEtlOperationContext Do(Action<IEtlPipeline> pipeline);
     }
 }

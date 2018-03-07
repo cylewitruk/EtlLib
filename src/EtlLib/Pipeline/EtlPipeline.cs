@@ -108,7 +108,23 @@ namespace EtlLib.Pipeline
             IEtlOperationResult result = null;
             try
             {
-                if (operation is IEtlOperationCollection collection)
+                if (operation is IConditionalLoopEtlOperation loop)
+                {
+                    var multiResult = new EtlOperationResult(true);
+                    do
+                    {
+                        
+                        foreach (var op in loop.GetOperations())
+                        {
+                            _executionResults[op] = LastResult = ExecuteOperation(op, context);
+                            multiResult
+                                .WithErrors(LastResult.Errors)
+                                .QuiesceSuccess(LastResult.IsSuccess);
+                        }
+                    } while (loop.Predicate(Context));
+                    return multiResult;
+                }
+                else if (operation is IEtlOperationCollection collection)
                 {
                     var multiResult = new EtlOperationResult(true);
                     foreach (var op in collection.GetOperations())
@@ -325,6 +341,16 @@ namespace EtlLib.Pipeline
         }
 
         public IEnumerable<IEtlOperation> GetOperations() => _steps;
+
+        private IEtlOperationCollection _currentOperationCollection;
+
+        public IDoWhileEtlOperationContext Do(Action<IEtlPipeline> pipeline)
+        {
+            var p = new EtlPipeline(_settings, Context);
+            pipeline(p);
+            _currentOperationCollection = p;
+            return new DoWhileEtlOperationContext(this, p);
+        }
     }
 
     public interface IEtlPipelineWithScalarResultContext<out TOut>
@@ -432,6 +458,29 @@ namespace EtlLib.Pipeline
         }
     }
 
+    public interface IDoWhileEtlOperationContext
+    {
+        IEtlPipeline While(Func<EtlPipelineContext, bool> predicate);
+    }
+
+    public class DoWhileEtlOperationContext : IDoWhileEtlOperationContext
+    {
+        private readonly IEtlPipeline _parentPipeline;
+        private readonly IEtlOperationCollection _operationCollection;
+
+        public DoWhileEtlOperationContext(IEtlPipeline parentPipeline, IEtlOperationCollection operationCollection)
+        {
+            _parentPipeline = parentPipeline;
+            _operationCollection = operationCollection;
+        }
+
+        public IEtlPipeline While(Func<EtlPipelineContext, bool> predicate)
+        {
+            _parentPipeline.Run(ctx => new DoWhileOperation(predicate, _operationCollection));
+            return _parentPipeline;
+        }
+    }
+
     public interface IEtlOperationCollection
     {
         IEnumerable<IEtlOperation> GetOperations();
@@ -453,5 +502,37 @@ namespace EtlLib.Pipeline
         }
 
         public IEnumerable<IEtlOperation> GetOperations() => _operations;
+    }
+
+    public class DoWhileOperation : AbstractEtlOperationWithNoResult, IConditionalLoopEtlOperation
+    {
+        private readonly IEtlOperationCollection _pipeline;
+
+        public Func<EtlPipelineContext, bool> Predicate { get; }
+
+        public DoWhileOperation(Func<EtlPipelineContext, bool> predicate, IEtlOperationCollection pipeline)
+        {
+            _pipeline = pipeline;
+            Predicate = predicate;
+        }
+
+        public IEnumerable<IEtlOperation> GetOperations()
+        {
+            return _pipeline.GetOperations();
+        }
+
+        public override IEtlOperationResult Execute(EtlPipelineContext context)
+        {
+            return new EtlOperationResult(true);
+        }
+    }
+
+    public interface IConditionalEtlOperation
+    {
+        Func<EtlPipelineContext, bool> Predicate { get; }
+    }
+
+    public interface IConditionalLoopEtlOperation : IEtlOperationCollection, IConditionalEtlOperation
+    {
     }
 }
