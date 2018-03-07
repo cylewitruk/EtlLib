@@ -108,38 +108,40 @@ namespace EtlLib.Pipeline
             IEtlOperationResult result = null;
             try
             {
-                if (operation is IConditionalLoopEtlOperation loop)
+                switch (operation)
                 {
-                    var multiResult = new EtlOperationResult(true);
-                    do
+                    case IConditionalLoopEtlOperation loop:
                     {
+                        var multiResult = new EtlOperationResult(true);
+                        do
+                        {
                         
-                        foreach (var op in loop.GetOperations())
+                            foreach (var op in loop.GetOperations())
+                            {
+                                _executionResults[op] = LastResult = ExecuteOperation(op, context);
+                                multiResult
+                                    .WithErrors(LastResult.Errors)
+                                    .QuiesceSuccess(LastResult.IsSuccess);
+                            }
+                        } while (loop.Predicate(Context));
+                        return multiResult;
+                    }
+                    case IEtlOperationCollection collection:
+                    {
+                        var multiResult = new EtlOperationResult(true);
+                        foreach (var op in collection.GetOperations())
                         {
                             _executionResults[op] = LastResult = ExecuteOperation(op, context);
                             multiResult
                                 .WithErrors(LastResult.Errors)
                                 .QuiesceSuccess(LastResult.IsSuccess);
                         }
-                    } while (loop.Predicate(Context));
-                    return multiResult;
-                }
-                else if (operation is IEtlOperationCollection collection)
-                {
-                    var multiResult = new EtlOperationResult(true);
-                    foreach (var op in collection.GetOperations())
-                    {
-                        _executionResults[op] = LastResult = ExecuteOperation(op, context);
-                        multiResult
-                            .WithErrors(LastResult.Errors)
-                            .QuiesceSuccess(LastResult.IsSuccess);
-                    }
 
-                    return multiResult;
-                }
-                else
-                {
-                    result = operation.Execute(context);
+                        return multiResult;
+                    }
+                    default:
+                        result = operation.Execute(context);
+                        break;
                 }
             }
             catch (Exception e)
@@ -342,197 +344,11 @@ namespace EtlLib.Pipeline
 
         public IEnumerable<IEtlOperation> GetOperations() => _steps;
 
-        private IEtlOperationCollection _currentOperationCollection;
-
         public IDoWhileEtlOperationContext Do(Action<IEtlPipeline> pipeline)
         {
             var p = new EtlPipeline(_settings, Context);
             pipeline(p);
-            _currentOperationCollection = p;
             return new DoWhileEtlOperationContext(this, p);
         }
-    }
-
-    public interface IEtlPipelineWithScalarResultContext<out TOut>
-    {
-        IEtlPipeline Pipeline { get; }
-
-        IEtlPipeline SaveResult(string stateKeyName);
-        IEtlPipeline WithResult(Action<EtlPipelineContext, TOut> result);
-    }
-
-    public class EtlPipelineWithScalarResultContext<TOut> : IEtlPipelineWithScalarResultContext<TOut>
-    {
-        private readonly EtlPipeline _parentPipeline;
-        private readonly EtlPipelineContext _context;
-
-        public IEtlPipeline Pipeline => _parentPipeline;
-
-        public EtlPipelineWithScalarResultContext(EtlPipeline pipeline, EtlPipelineContext context)
-        {
-            _parentPipeline = pipeline;
-            _context = context;
-        }
-
-        public IEtlPipeline SaveResult(string stateKeyName)
-        {
-            var method = new Action(() =>
-            {
-                var result = (IScalarEtlOperationResult<TOut>)_parentPipeline.LastResult;
-                _context.State[stateKeyName] = result.Result;
-            });
-
-            return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named("Save Scalar Result"));
-        }
-
-        public IEtlPipeline WithResult(Action<EtlPipelineContext, TOut> result)
-        {
-            var method = new Action(() =>
-            {
-                var value = ((IScalarEtlOperationResult<TOut>) _parentPipeline.LastResult).Result;
-                result(_context, value);
-            });
-
-            return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named("With Scalar Result"));
-        }
-    }
-
-    public interface IEtlPipelineEnumerableResultContext<out TOut>
-    {
-        IEtlPipeline Pipeline { get; }
-
-        IEtlPipeline SaveResult(string stateKeyName);
-        IEtlPipeline WithResult(Action<EtlPipelineContext, IEnumerable<TOut>> result);
-        IEtlPipeline ForEachResult(Action<EtlPipelineContext, int, TOut> result);
-    }
-
-    public class EtlPipelineEnumerableResultContext<TOut> : IEtlPipelineEnumerableResultContext<TOut>
-    {
-        private readonly EtlPipeline _parentPipeline;
-        private readonly EtlPipelineContext _context;
-
-        public IEtlPipeline Pipeline => _parentPipeline;
-
-        public EtlPipelineEnumerableResultContext(EtlPipeline pipeline, EtlPipelineContext context)
-        {
-            _parentPipeline = pipeline;
-            _context = context;
-        }
-
-        public IEtlPipeline SaveResult(string stateKeyName)
-        {
-            var method = new Action(() =>
-            {
-                var result = (IEnumerableEtlOperationResult<TOut>)_parentPipeline.LastResult;
-                _context.State[stateKeyName] = result.Result;
-            });
-
-            return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named("Save Enumerable Result"));
-        }
-
-        public IEtlPipeline WithResult(Action<EtlPipelineContext, IEnumerable<TOut>> result)
-        {
-            var method = new Action(() =>
-            {
-                var value = ((IEnumerableEtlOperationResult<TOut>)_parentPipeline.LastResult).Result;
-                result(_context, value);
-            });
-
-            return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named("With Enumerable Result"));
-        }
-
-        public IEtlPipeline ForEachResult(Action<EtlPipelineContext, int, TOut> result)
-        {
-            var method = new Action(() =>
-            {
-                var results = ((IEnumerableEtlOperationResult<TOut>)_parentPipeline.LastResult).Result;
-
-                var count = 0;
-                foreach (var item in results)
-                {
-                    result(_context, ++count, item);
-                }
-            });
-
-            return _parentPipeline.Run(new DynamicInvokeEtlOperation(method).Named($"Foreach {typeof(TOut).Name} in Result"));
-        }
-    }
-
-    public interface IDoWhileEtlOperationContext
-    {
-        IEtlPipeline While(Func<EtlPipelineContext, bool> predicate);
-    }
-
-    public class DoWhileEtlOperationContext : IDoWhileEtlOperationContext
-    {
-        private readonly IEtlPipeline _parentPipeline;
-        private readonly IEtlOperationCollection _operationCollection;
-
-        public DoWhileEtlOperationContext(IEtlPipeline parentPipeline, IEtlOperationCollection operationCollection)
-        {
-            _parentPipeline = parentPipeline;
-            _operationCollection = operationCollection;
-        }
-
-        public IEtlPipeline While(Func<EtlPipelineContext, bool> predicate)
-        {
-            _parentPipeline.Run(ctx => new DoWhileOperation(predicate, _operationCollection));
-            return _parentPipeline;
-        }
-    }
-
-    public interface IEtlOperationCollection
-    {
-        IEnumerable<IEtlOperation> GetOperations();
-    }
-
-    public class EtlOperationGroup : IEtlOperationCollection
-    {
-        private readonly List<IEtlOperation> _operations;
-
-        public EtlOperationGroup(params IEtlOperation[] operations)
-        {
-            _operations = new List<IEtlOperation>(operations);
-        }
-
-        public EtlOperationGroup AddOperation(IEtlOperation operation)
-        {
-            _operations.Add(operation);
-            return this;
-        }
-
-        public IEnumerable<IEtlOperation> GetOperations() => _operations;
-    }
-
-    public class DoWhileOperation : AbstractEtlOperationWithNoResult, IConditionalLoopEtlOperation
-    {
-        private readonly IEtlOperationCollection _pipeline;
-
-        public Func<EtlPipelineContext, bool> Predicate { get; }
-
-        public DoWhileOperation(Func<EtlPipelineContext, bool> predicate, IEtlOperationCollection pipeline)
-        {
-            _pipeline = pipeline;
-            Predicate = predicate;
-        }
-
-        public IEnumerable<IEtlOperation> GetOperations()
-        {
-            return _pipeline.GetOperations();
-        }
-
-        public override IEtlOperationResult Execute(EtlPipelineContext context)
-        {
-            return new EtlOperationResult(true);
-        }
-    }
-
-    public interface IConditionalEtlOperation
-    {
-        Func<EtlPipelineContext, bool> Predicate { get; }
-    }
-
-    public interface IConditionalLoopEtlOperation : IEtlOperationCollection, IConditionalEtlOperation
-    {
     }
 }

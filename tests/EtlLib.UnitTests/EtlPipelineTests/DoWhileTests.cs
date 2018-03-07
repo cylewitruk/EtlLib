@@ -44,7 +44,7 @@ namespace EtlLib.UnitTests.EtlPipelineTests
         }
 
         [Fact]
-        public void Do_while_stops_execution_when_predicate_returns_false()
+        public void Do_while_breaks_loop_when_predicate_returns_false()
         {
             var context = new EtlPipelineContext();
 
@@ -56,6 +56,8 @@ namespace EtlLib.UnitTests.EtlPipelineTests
                 ctx.State["remaining_count"] = items.Count;
                 return true;
             });
+
+            var executedAfter = false;
 
             EtlPipeline.Create(settings => settings
                     .UseExistingContext(context)
@@ -73,6 +75,11 @@ namespace EtlLib.UnitTests.EtlPipelineTests
                         .Run(getCountOperation);
                 })
                 .While(ctx => (int)ctx.State["remaining_count"] > 5)
+                .Run(new ActionEtlOperation(ctx => 
+                {
+                    executedAfter = true;
+                    return true;
+                }))
                 .Execute();
 
             iterations.Should().Be(4);
