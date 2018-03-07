@@ -60,12 +60,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         IRedshiftCopyFromS3Builder Csv(Action<IRedshiftCopyFromCsvBuilder> csv);
     }
 
-    public interface IRedshiftCopyFromCsvBuilder
-    {
-        IRedshiftCopyFromCsvBuilder DelimitedBy(string delimiter);
-        IRedshiftCopyFromCsvBuilder QuoteAs(string quote);
-        IRedshiftCopyFromCsvBuilder EncodingAs(string encoiding);
-    }
+    
 
     public class RedshiftCopyCommandBuilder : IRedshiftBuilder, IRedshiftCopyCommandBuilder, IRedshiftCopyFromAuthorizedByBuilder, IRedshiftCopyFromBuilder
     {
