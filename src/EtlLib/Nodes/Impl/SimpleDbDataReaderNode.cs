@@ -6,7 +6,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class SimpleDbDataReaderNode : AbstractOutputNode<Row>
+    public class SimpleDbDataReaderNode : AbstractSourceNode<Row>
     {
         private readonly Func<IDbConnection> _getConnection;
         private IsolationLevel _isolationLevel;

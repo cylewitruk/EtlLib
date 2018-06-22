@@ -7,7 +7,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Dapper
 {
-    public class DapperWriterNode<TOut> : AbstractInputNode<TOut> 
+    public class DapperWriterNode<TOut> : AbstractSinkNode<TOut> 
         where TOut : class, INodeOutput<TOut>, new()
     {
         private IsolationLevel _isolationLevel;

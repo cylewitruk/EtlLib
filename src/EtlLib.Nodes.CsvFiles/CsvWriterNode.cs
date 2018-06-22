@@ -7,7 +7,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.CsvFiles
 {
-    public class CsvWriterNode : AbstractInputOutputNode<Row, NodeOutputWithFilePath>
+    public class CsvWriterNode : AbstractProcessingNode<Row, NodeOutputWithFilePath>
     {
         private string _filePath;
         private bool _includeHeader;

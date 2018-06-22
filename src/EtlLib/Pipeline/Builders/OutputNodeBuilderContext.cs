@@ -9,12 +9,12 @@ namespace EtlLib.Pipeline.Builders
     public interface IOutputNodeBuilderContext<TIn> 
         where TIn : class, INodeOutput<TIn>, new()
     {
-        IOutputNodeBuilderContext<TOut> Continue<TOut>(Func<EtlPipelineContext, INodeWithInputOutput<TIn, TOut>> ctx)
+        IOutputNodeBuilderContext<TOut> Continue<TOut>(Func<EtlPipelineContext, IProcessingNode<TIn, TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new();
 
-        IEtlProcessCompletedBuilderContext Complete(Func<EtlPipelineContext, INodeWithInput<TIn>> ctx);
+        IEtlProcessCompletedBuilderContext Complete(Func<EtlPipelineContext, ISinkNode<TIn>> ctx);
 
-        IEtlProcessCompletedWithResultBuilderContext<TOut> CompleteWithResult<TOut>(Func<EtlPipelineContext, INodeWithInputOutput<TIn, TOut>> ctx)
+        IEtlProcessCompletedWithResultBuilderContext<TOut> CompleteWithResult<TOut>(Func<EtlPipelineContext, IProcessingNode<TIn, TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new();
 
         IEtlProcessCompletedWithResultBuilderContext<TIn> CompleteWithResult();
@@ -35,7 +35,7 @@ namespace EtlLib.Pipeline.Builders
             CreatingNode = creatingNode;
         }
 
-        public IOutputNodeBuilderContext<TOut> Continue<TOut>(Func<EtlPipelineContext, INodeWithInputOutput<TIn, TOut>> ctx)
+        public IOutputNodeBuilderContext<TOut> Continue<TOut>(Func<EtlPipelineContext, IProcessingNode<TIn, TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new()
         {
             var node = ctx(_parentBuilder.Context);
@@ -45,7 +45,7 @@ namespace EtlLib.Pipeline.Builders
             return new OutputNodeBuilderContext<TOut>(_parentBuilder, node);
         }
 
-        public IEtlProcessCompletedBuilderContext Complete(Func<EtlPipelineContext, INodeWithInput<TIn>> ctx)
+        public IEtlProcessCompletedBuilderContext Complete(Func<EtlPipelineContext, ISinkNode<TIn>> ctx)
         {
             var node = ctx(_parentBuilder.Context);
 
@@ -55,7 +55,7 @@ namespace EtlLib.Pipeline.Builders
             return new EtlProcessCompletedBuilderContext(_parentBuilder);
         }
 
-        public IEtlProcessCompletedWithResultBuilderContext<TOut> CompleteWithResult<TOut>(Func<EtlPipelineContext, INodeWithInputOutput<TIn, TOut>> ctx)
+        public IEtlProcessCompletedWithResultBuilderContext<TOut> CompleteWithResult<TOut>(Func<EtlPipelineContext, IProcessingNode<TIn, TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new()
         {
             var node = ctx(_parentBuilder.Context);

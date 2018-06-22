@@ -33,6 +33,11 @@ namespace EtlLib.Data
 
         public void Freeze() => _isFrozen = true;
 
+        public bool HasColumn(string columnName)
+        {
+            return _columns.ContainsKey(columnName);
+        }
+
         public static Row FromArray(string[] columns, object[] values)
         {
             if (columns.Length != values.Length)
@@ -44,6 +49,17 @@ namespace EtlLib.Data
                 row[columns[i]] = values[i];
             }
             return row;
+        }
+
+        public void Merge(Row row, bool overwriteExisting = false)
+        {
+            foreach (var column in row)
+            {
+                if (HasColumn(column.Key) && !overwriteExisting)
+                    continue;
+
+                this[column.Key] = column.Value;
+            }
         }
 
         public Row Copy()

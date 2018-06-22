@@ -4,19 +4,19 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericMergeNode<T> : AbstractOutputNode<T>, INodeWithInput2<T>
+    public class GenericMergeNode<T> : AbstractSourceNode<T>, ISinkNode2<T>
         where T : class, INodeOutput<T>, new()
     {
         public IEnumerable<T> Input { get; private set; }
         public IEnumerable<T> Input2 { get; private set; }
 
-        public INodeWithInput<T> SetInput(IEnumerable<T> input)
+        public ISinkNode<T> SetInput(IEnumerable<T> input)
         {
             Input = input;
             return this;
         }
         
-        public INodeWithInput2<T> SetInput2(IEnumerable<T> input2)
+        public ISinkNode2<T> SetInput2(IEnumerable<T> input2)
         {
             Input2 = input2;
             return this;

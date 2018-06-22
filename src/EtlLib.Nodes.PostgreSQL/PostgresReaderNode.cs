@@ -5,7 +5,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.PostgreSQL
 {
-    public class PostgresReaderNode : AbstractOutputNode<Row>
+    public class PostgresReaderNode : AbstractSourceNode<Row>
     {
         private readonly string _connectionString;
         private readonly string _commandText;

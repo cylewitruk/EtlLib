@@ -6,7 +6,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.SqlServer
 {
-    public class SqlServerReaderNode : AbstractOutputNode<Row>
+    public class SqlServerReaderNode : AbstractSourceNode<Row>
     {
         private readonly string _connectionString;
         private readonly string _commandText;

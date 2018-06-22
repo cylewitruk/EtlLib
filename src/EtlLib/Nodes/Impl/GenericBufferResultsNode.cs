@@ -5,7 +5,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericBufferResultsNode<TIn> : AbstractInputOutputNode<TIn, BufferedNodeOutput<TIn>> 
+    public class GenericBufferResultsNode<TIn> : AbstractProcessingNode<TIn, BufferedNodeOutput<TIn>> 
         where TIn : class, INodeOutput<TIn>, new() 
     {
         public override void OnExecute(EtlPipelineContext context)

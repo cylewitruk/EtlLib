@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericDataGenerationNode<TOut, TState> : AbstractOutputNode<TOut>, GenericDataGenerationNode<TOut, TState>.IDataGeneratorHelper<TState>
+    public class GenericDataGenerationNode<TOut, TState> : AbstractSourceNode<TOut>, GenericDataGenerationNode<TOut, TState>.IDataGeneratorHelper<TState>
         where TOut : class, INodeOutput<TOut>, new()
     {
         private readonly int _fixedCount;

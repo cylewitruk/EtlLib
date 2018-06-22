@@ -6,10 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="1.50.4" />
+    <PackageReference Include="Dapper" Version="1.50.5" />
     <PackageReference Include="DapperExtensions" Version="1.6.3" />
-    <PackageReference Include="NLog" Version="4.5.0-rc06" />
-    <PackageReference Include="NLog.Config" Version="4.5.0-rc06" />
+    <PackageReference Include="NLog" Version="4.5.5" />
+    <PackageReference Include="NLog.Config" Version="4.5.5" />
   </ItemGroup>
 
   <ItemGroup>

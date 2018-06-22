@@ -5,7 +5,7 @@ using MongoDB.Driver;
 
 namespace EtlLib.Nodes.MongoDb
 {
-    public class MongoDbReaderNode<T> : AbstractOutputNode<T>
+    public class MongoDbReaderNode<T> : AbstractSourceNode<T>
         where T : class, INodeOutput<T>, new()
     {
         private readonly string _connectionString, _databaseName, _collectionName;

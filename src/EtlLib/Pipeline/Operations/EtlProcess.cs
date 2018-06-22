@@ -47,14 +47,14 @@ namespace EtlLib.Pipeline.Operations
         private readonly IErrorHandler _errorHandler;
         private readonly ConcurrentBag<EtlOperationError> _errors;
 
-        protected INodeWithInput ResultCollector { get; }
+        protected ISinkNode ResultCollector { get; }
         protected bool HasResult { get; }
 
         protected internal EtlProcess(IInputOutputAdapter[] ioAdapters)
         {
             _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
             _ioAdapters = new List<IInputOutputAdapter>(ioAdapters);
-            _nodes = new List<INode>(ioAdapters.Select(x => x.OutputNode).Concat(ioAdapters.SelectMany(x => x.AttachedNodes)).Distinct());
+            _nodes = new List<INode>(ioAdapters.Select(x => x.SourceNode).Concat(ioAdapters.SelectMany(x => x.SinkNodes)).Distinct());
             _nodeStatistics = new NodeStatistics();
             _errors = new ConcurrentBag<EtlOperationError>();
             _errorHandler = new ErrorHandler()
@@ -118,9 +118,9 @@ namespace EtlLib.Pipeline.Operations
 
                         try
                         {
-                            if (node is INodeWithOutput outputNode && context.ObjectPool.HasObjectPool(outputNode.OutputType))
+                            if (node is ISourceNode outputNode && context.ObjectPool.HasObjectPool(outputNode.OutputType))
                             {
-                                var ioAdapter = _ioAdapters.SingleOrDefault(x => x.OutputNode == node);
+                                var ioAdapter = _ioAdapters.SingleOrDefault(x => x.SourceNode == node);
                                 ioAdapter.SetObjectPool(context.ObjectPool.GetObjectPool(outputNode.OutputType));
                             }
 

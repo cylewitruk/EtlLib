@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericEnumerableReaderNode<T> : AbstractOutputNode<T> where T : class, INodeOutput<T>, new()
+    public class GenericEnumerableReaderNode<T> : AbstractSourceNode<T> where T : class, INodeOutput<T>, new()
     {
         private readonly IEnumerable<T> _enumerable;
 

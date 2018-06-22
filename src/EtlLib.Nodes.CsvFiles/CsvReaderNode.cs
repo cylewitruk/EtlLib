@@ -5,7 +5,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.CsvFiles
 {
-    public class CsvReaderNode : AbstractOutputNode<Row>
+    public class CsvReaderNode : AbstractSourceNode<Row>
     {
         private readonly bool _hasHeader;
         private readonly string _filePath;

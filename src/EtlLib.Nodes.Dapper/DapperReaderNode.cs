@@ -6,7 +6,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Dapper
 {
-    public class DapperReaderNode<TOut> : AbstractOutputNode<TOut> 
+    public class DapperReaderNode<TOut> : AbstractSourceNode<TOut> 
         where TOut : class, INodeOutput<TOut>, new()
     {
         private readonly string _connectionName;

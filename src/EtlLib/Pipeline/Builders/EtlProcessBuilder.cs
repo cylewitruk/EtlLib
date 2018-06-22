@@ -15,7 +15,7 @@ namespace EtlLib.Pipeline.Builders
 
         IEtlProcessBuilder Named(string name);
 
-        IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlPipelineContext, INodeWithOutput<TOut>> ctx)
+        IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlPipelineContext, ISourceNode<TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new();
     }
 
@@ -63,7 +63,7 @@ namespace EtlLib.Pipeline.Builders
             return this;
         }
 
-        public IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlPipelineContext, INodeWithOutput<TOut>> ctx) 
+        public IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlPipelineContext, ISourceNode<TOut>> ctx) 
             where TOut : class, INodeOutput<TOut>, new()
         {
             var node = ctx(Context);
@@ -73,16 +73,16 @@ namespace EtlLib.Pipeline.Builders
             return new OutputNodeBuilderContext<TOut>(this, node);
         }
 
-        public void AttachNodeToOutput<TIn>(INodeWithInput<TIn> node)
+        public void AttachNodeToOutput<TIn>(ISinkNode<TIn> node)
             where TIn : class, INodeOutput<TIn>, new()
         {
             node.SetId(Guid.NewGuid());
 
             ((IInputOutputAdapter<TIn>)_last).AttachConsumer(node);
-            Log.Debug($"'{Name}' registered [output from] {_last.OutputNode} as [input to] target -> {node}");
+            Log.Debug($"'{Name}' registered [output from] {_last.SourceNode} as [input to] target -> {node}");
         }
 
-        public void RegisterInputOutputNode<TIn, TOut>(INodeWithInputOutput<TIn, TOut> node)
+        public void RegisterInputOutputNode<TIn, TOut>(IProcessingNode<TIn, TOut> node)
             where TIn : class, INodeOutput<TIn>, new()
             where TOut : class, INodeOutput<TOut>, new()
         {
@@ -94,7 +94,7 @@ namespace EtlLib.Pipeline.Builders
             RegisterOutputNode(node);
         }
 
-        public void RegisterOutputNode<TOut>(INodeWithOutput<TOut> node)
+        public void RegisterOutputNode<TOut>(ISourceNode<TOut> node)
             where TOut : class, INodeOutput<TOut>, new()
         {
             node.SetId(Guid.NewGuid());

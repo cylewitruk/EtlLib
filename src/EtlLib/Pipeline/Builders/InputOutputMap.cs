@@ -7,25 +7,25 @@ namespace EtlLib.Pipeline.Builders
     public class InputOutputMap
     {
         public INode ThisNode { get; set; }
-        public List<INodeWithInput> TargetNodes { get; }
-        public List<INodeWithOutput> SourceNodes { get; }
+        public List<ISinkNode> TargetNodes { get; }
+        public List<ISourceNode> SourceNodes { get; }
         public EtlProcessBuilder Builder { get; }
 
         public InputOutputMap(INode thisNode, EtlProcessBuilder builder)
         {
-            TargetNodes = new List<INodeWithInput>();
-            SourceNodes = new List<INodeWithOutput>();
+            TargetNodes = new List<ISinkNode>();
+            SourceNodes = new List<ISourceNode>();
             ThisNode = thisNode;
             Builder = builder;
         }
 
-        public InputOutputMap AddTargetNode(INodeWithInput target)
+        public InputOutputMap AddTargetNode(ISinkNode target)
         {
             TargetNodes.Add(target);
             return this;
         }
 
-        public InputOutputMap AddSourceNode(INodeWithOutput source)
+        public InputOutputMap AddSourceNode(ISourceNode source)
         {
             SourceNodes.Add(source);
             return this;
