@@ -61,7 +61,7 @@ namespace EtlLib.Pipeline.Operations
             {
                 OnItemErrorFn = (n, e, i) =>
                 {
-                    _log.Error(e.Message);
+                    _log.Error(e.Message, e);
                     _nodeStatistics.IncrementErrors(n);
                     _errors.Add(new EtlOperationError(this, n, e, i));
 
@@ -70,7 +70,7 @@ namespace EtlLib.Pipeline.Operations
                 },
                 OnErrorFn = (n, e) =>
                 {
-                    _log.Error(e.Message);
+                    _log.Error(e.Message, e);
                     _nodeStatistics.IncrementErrors(n);
                     _errors.Add(new EtlOperationError(this, n, e));
 

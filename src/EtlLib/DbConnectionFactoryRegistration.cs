@@ -87,6 +87,7 @@ namespace EtlLib
             _registrations.Add(name, new DbConnectionFactoryRegistration(name, connectionString, cs => new T
             {
                 ConnectionString = cs
+                
             }));
             return this;
         }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using EtlLib.Data;
@@ -36,49 +37,56 @@ namespace EtlLib.Nodes.SqlServer
 
         public override void OnExecute(EtlPipelineContext context)
         {
-            using (var con = new SqlConnection(_connectionString))
+            try
             {
-                con.Open();
-
-                using (var trx = con.BeginTransaction(_isolationLevel))
-                using (var cmd = con.CreateCommand())
+                using (var con = new SqlConnection(_connectionString))
                 {
-                    cmd.CommandText = _commandText;
-                    cmd.CommandType = CommandType.Text;
-                    cmd.Transaction = trx;
+                    con.Open();
 
-                    foreach (var param in _parameters)
+                    using (var trx = con.BeginTransaction(_isolationLevel))
+                    using (var cmd = con.CreateCommand())
                     {
-                        var p = cmd.CreateParameter();
-                        p.ParameterName = param.Key;
-                        p.Value = param.Value;
+                        cmd.CommandText = _commandText;
+                        cmd.CommandType = CommandType.Text;
+                        cmd.Transaction = trx;
 
-                        cmd.Parameters.Add(p);
-                    }
-
-                    using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
-                    {
-                        if (!reader.HasRows)
+                        foreach (var param in _parameters)
                         {
-                            SignalEnd();
-                            return;
+                            var p = cmd.CreateParameter();
+                            p.ParameterName = param.Key;
+                            p.Value = param.Value;
+
+                            cmd.Parameters.Add(p);
                         }
 
-                        while (reader.Read())
+                        using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
                         {
-                            var row = new Row();
-                            for (var i = 0; i < reader.FieldCount; i++)
+                            if (!reader.HasRows)
                             {
-                                row[reader.GetName(i)] = reader[i];
+                                SignalEnd();
+                                return;
                             }
 
-                            Emit(row);
+                            while (reader.Read())
+                            {
+                                var row = new Row();
+                                for (var i = 0; i < reader.FieldCount; i++)
+                                {
+                                    row[reader.GetName(i)] = reader[i];
+                                }
+
+                                Emit(row);
+                            }
                         }
                     }
                 }
-            }
 
-            SignalEnd();
+                SignalEnd();
+            }
+            catch(SqlException e)
+            {
+                throw new AggregateException("Error while executing query " + _commandText, e); 
+            }
         }
     }
 }

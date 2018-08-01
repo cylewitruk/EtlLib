@@ -288,6 +288,21 @@ namespace EtlLib.Pipeline
             return this;
         }
 
+//        public IEtlPipeline RunIf<TOut>(Func<EtlPipelineContext, bool> predicate, Func<EtlPipelineContext, IEtlOperationWithScalarResult<TOut>> operation, Action<IEtlPipelineWithScalarResultContext<TOut>> result)
+//        {
+//            var method = new Action(() =>
+//            {
+//                if (!predicate(Context))
+//                    return;
+//
+//                var op = operation(Context);
+//                op.ExecuteWithResult(Context);
+//                result(new EtlPipelineWithScalarResultContext<TOut>(this, Context));
+//            });
+//            Run(new DynamicInvokeEtlOperation(method).Named("Conditional Execution With Scalar Result"));
+//            return this;
+//        }
+
         public IEtlPipeline If(Func<EtlPipelineContext, bool> predicate, Action<IEtlPipeline> pipeline)
         {
             _currentPredicate = predicate;
@@ -350,5 +365,6 @@ namespace EtlLib.Pipeline
             pipeline(p);
             return new DoWhileEtlOperationContext(this, p);
         }
+        
     }
 }

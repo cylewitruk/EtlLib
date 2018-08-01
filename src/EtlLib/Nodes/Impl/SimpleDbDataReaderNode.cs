@@ -23,6 +23,7 @@ namespace EtlLib.Nodes.Impl
             _isolationLevel = IsolationLevel.ReadCommitted;
             _commandType = CommandType.Text;
         }
+        
 
         public SimpleDbDataReaderNode WithCommandType(CommandType commandType)
         {
