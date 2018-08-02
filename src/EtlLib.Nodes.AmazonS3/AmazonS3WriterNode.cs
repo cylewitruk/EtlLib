@@ -7,7 +7,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.AmazonS3
 {
-    public class AmazonS3WriterNode : AbstractInputOutputNode<NodeOutputWithFilePath, AmazonS3WriterResult>
+    public class AmazonS3WriterNode : AbstractProcessingNode<NodeOutputWithFilePath, AmazonS3WriterResult>
     {
         private readonly string _bucketName;
         private AWSCredentials _awsCredentials;

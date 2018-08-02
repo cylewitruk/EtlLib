@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericFilterNode<T> : AbstractInputOutputNode<T, T>
+    public class GenericFilterNode<T> : AbstractProcessingNode<T, T>
         where T : class, INodeOutput<T>, new()
     {
         private readonly Func<T, bool> _predicate;

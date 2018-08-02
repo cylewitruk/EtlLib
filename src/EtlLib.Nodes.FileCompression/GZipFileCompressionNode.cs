@@ -7,7 +7,7 @@ using ICSharpCode.SharpZipLib.GZip;
 
 namespace EtlLib.Nodes.FileCompression
 {
-    public class GZipFileCompressionNode : AbstractInputOutputNode<NodeOutputWithFilePath, NodeOutputWithFilePath>
+    public class GZipFileCompressionNode : AbstractProcessingNode<NodeOutputWithFilePath, NodeOutputWithFilePath>
     {
         private int _compressionLevel, _degreeOfParallelism;
         private string _fileSuffix;

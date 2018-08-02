@@ -51,7 +51,7 @@ namespace EtlLib.Nodes
             {
                 RaiseError(e);
 
-                if (this is INodeWithOutput output)
+                if (this is ISourceNode output)
                     output.Emitter.SignalEnd();
             }
         }

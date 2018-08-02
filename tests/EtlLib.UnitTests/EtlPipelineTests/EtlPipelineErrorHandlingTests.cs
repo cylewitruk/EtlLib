@@ -28,7 +28,7 @@ namespace EtlLib.UnitTests.EtlPipelineTests
                 new Row {["number"] = 2}
             };
 
-            var inputNode = new TestOutputNode((ctx, emitter) =>
+            var inputNode = new TestSourceNode((ctx, emitter) =>
             {
                 foreach (var item in input)
                     emitter.Emit(item);
@@ -42,7 +42,7 @@ namespace EtlLib.UnitTests.EtlPipelineTests
             var process = EtlProcessBuilder.Create(context)
                 .Input(ctx => inputNode)
                 .Continue(ctx => transformNode)
-                .Complete(ctx => new TestInputNode())
+                .Complete(ctx => new TestSinkNode())
                 .Build();
 
             var pipeline = EtlPipeline.Create(settings => settings

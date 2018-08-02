@@ -7,7 +7,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericClassificationNode<T, TKey, TClass> : AbstractInputOutputNode<T, T>
+    public class GenericClassificationNode<T, TKey, TClass> : AbstractProcessingNode<T, T>
         where T : class, INodeOutput<T>, new()
     {
         //private readonly Action<T, TClass> _targetSetter;

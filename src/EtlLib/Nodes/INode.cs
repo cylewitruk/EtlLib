@@ -19,43 +19,43 @@ namespace EtlLib.Nodes
         void Execute(EtlPipelineContext context);
     }
 
-    public interface INodeWithInput : INode { }
+    public interface ISinkNode : INode { }
 
-    public interface INodeWithInput<TIn> : INodeWithInput
+    public interface ISinkNode<TIn> : ISinkNode
         where TIn : class, INodeOutput<TIn>, new()
     {
         IEnumerable<TIn> Input { get; }
 
-        INodeWithInput<TIn> SetInput(IEnumerable<TIn> input);
+        ISinkNode<TIn> SetInput(IEnumerable<TIn> input);
     }
 
-    public interface INodeWithInput2<TIn> : INodeWithInput<TIn>
+    public interface ISinkNode2<TIn> : ISinkNode<TIn>
         where TIn : class, INodeOutput<TIn>, new()
     {
         IEnumerable<TIn> Input2 { get; }
 
-        INodeWithInput2<TIn> SetInput2(IEnumerable<TIn> input2);
+        ISinkNode2<TIn> SetInput2(IEnumerable<TIn> input2);
     }
 
-    public interface INodeWithOutput : INode
+    public interface ISourceNode : INode
     {
         Type OutputType { get; }
         IEmitter Emitter { get; }
     }
 
-    public interface INodeWithOutput<TOut> : INodeWithOutput
+    public interface ISourceNode<TOut> : ISourceNode
         where TOut : class, INodeOutput<TOut>, new()
     {
         IEmitter<TOut> TypedEmitter { get; }
 
-        INodeWithOutput<TOut> SetEmitter(IEmitter<TOut> emitter);
+        ISourceNode<TOut> SetEmitter(IEmitter<TOut> emitter);
     }
 
-    public interface INodeWithInputOutput<TIn, TOut> : INodeWithInput<TIn>, INodeWithOutput<TOut>
+    public interface IProcessingNode<TIn, TOut> : ISinkNode<TIn>, ISourceNode<TOut>
         where TIn : class, INodeOutput<TIn>, new()
         where TOut : class, INodeOutput<TOut>, new()
     {
     }
 
-    public interface IResultCollectorNode : INodeWithInput { }
+    public interface IResultCollectorNode : ISinkNode { }
 }

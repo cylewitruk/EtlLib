@@ -9,11 +9,11 @@ namespace EtlLib.Support
 {
     public interface IInputOutputAdapter : IDisposable
     {
-        INode OutputNode { get; }
-        IEnumerable<INode> AttachedNodes { get; }
+        INode SourceNode { get; }
+        IEnumerable<INode> SinkNodes { get; }
         int EmitCount { get; }
 
-        bool AttachConsumer(INodeWithInput input);
+        bool AttachConsumer(ISinkNode input);
 
         IInputOutputAdapter SetObjectPool(IObjectPool pool);
         IInputOutputAdapter SetNodeStatisticsCollector(NodeStatistics stats);
@@ -22,31 +22,31 @@ namespace EtlLib.Support
     public interface IInputOutputAdapter<T> : IInputOutputAdapter
         where T : class, INodeOutput<T>, new()
     {
-        bool AttachConsumer(INodeWithInput<T> input);
+        bool AttachConsumer(ISinkNode<T> input);
     }
 
     public class InputOutputAdapter<T> : IInputOutputAdapter<T>, IEmitter<T>
         where T : class, INodeOutput<T>, new()
     {
         private readonly ConcurrentDictionary<INode, BlockingCollection<T>> _queueMap;
-        private readonly ConcurrentBag<INodeWithInput<T>> _inputs;
-        private readonly INodeWithOutput<T> _output;
+        private readonly ConcurrentBag<ISinkNode<T>> _sinkNodes;
+        private readonly ISourceNode<T> _sourceNode;
         private NodeStatistics _nodeStatistics;
         private ObjectPool<T> _objectPool;
         private ILogger _log;
         private volatile int _emittedItems;
 
-        public INode OutputNode => _output;
+        public INode SourceNode => _sourceNode;
         public INodeWaitSignaller WaitSignaller { get; }
         public INodeWaiter Waiter { get; }
         public int EmitCount => _emittedItems;
-        public IEnumerable<INode> AttachedNodes => _inputs;
+        public IEnumerable<INode> SinkNodes => _sinkNodes;
 
-        public InputOutputAdapter(INodeWithOutput<T> output)
+        public InputOutputAdapter(ISourceNode<T> output)
         {
             _queueMap = new ConcurrentDictionary<INode, BlockingCollection<T>>();
-            _inputs = new ConcurrentBag<INodeWithInput<T>>();
-            _output = output;
+            _sinkNodes = new ConcurrentBag<ISinkNode<T>>();
+            _sourceNode = output;
             _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.IOAdapter");
 
             if (output is IBlockingNode)
@@ -61,7 +61,7 @@ namespace EtlLib.Support
                 Waiter = new NoWaitNodeWaiter();
             }
 
-            _output.SetEmitter(this);
+            _sourceNode.SetEmitter(this);
         }
 
         public IInputOutputAdapter SetNodeStatisticsCollector(NodeStatistics stats)
@@ -87,17 +87,17 @@ namespace EtlLib.Support
             return _queueMap[node].GetConsumingEnumerable();
         }
 
-        public IEnumerable<T> GetConsumingEnumerable(INodeWithInput<T> node)
+        public IEnumerable<T> GetConsumingEnumerable(ISinkNode<T> node)
         {
             return _queueMap[node].GetConsumingEnumerable();
         }
 
-        public bool AttachConsumer(INodeWithInput input)
+        public bool AttachConsumer(ISinkNode input)
         {
-            return AttachConsumer((INodeWithInput<T>) input);
+            return AttachConsumer((ISinkNode<T>) input);
         }
 
-        public bool AttachConsumer(INodeWithInput<T> input)
+        public bool AttachConsumer(ISinkNode<T> input)
         {
             if (input.Input != null)
                 throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) already has an input assigned.");
@@ -109,7 +109,7 @@ namespace EtlLib.Support
                 .SetInput(GetConsumingEnumerable(input))
                 .SetWaiter(Waiter);
 
-            _inputs.Add(input);
+            _sinkNodes.Add(input);
 
             return true;
         }
@@ -117,12 +117,12 @@ namespace EtlLib.Support
         public void Emit(T item)
         {
             if (_emittedItems == 0)
-                _log.Debug($"Node {_output} emitting its first item.");
+                _log.Debug($"Node {_sourceNode} emitting its first item.");
 
-            item.Freeze();
+            //item.Freeze();
             _emittedItems++;
 
-            _nodeStatistics?.IncrementWrites(OutputNode);
+            _nodeStatistics?.IncrementWrites(SourceNode);
 
             var firstTarget = true;
             foreach (var queue in _queueMap)
@@ -142,12 +142,12 @@ namespace EtlLib.Support
             }
 
             if (_emittedItems % 5000 == 0)
-                _log.Debug($"Node {_output} has emitted {_emittedItems} items.");
+                _log.Debug($"Node {_sourceNode} has emitted {_emittedItems} items.");
         }
 
         public void SignalEnd()
         {
-            _log.Debug($"Node {_output} has signalled the end of its data stream (emitted {_emittedItems} total items).");
+            _log.Debug($"Node {_sourceNode} has signalled the end of its data stream (emitted {_emittedItems} total items).");
 
             foreach (var queue in _queueMap.Values)
                 queue.CompleteAdding();

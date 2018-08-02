@@ -6,7 +6,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericTransformationNode<T> : AbstractInputOutputNode<T, T>
+    public class GenericTransformationNode<T> : AbstractProcessingNode<T, T>
         where T : class, INodeOutput<T>, new()
     {
         private readonly Func<IDictionary<string, object>, T, T> _transform;
@@ -36,7 +36,7 @@ namespace EtlLib.Nodes.Impl
         }
     }
 
-    public class GenericTransformationNode<T, TState> : AbstractInputOutputNode<T, T>
+    public class GenericTransformationNode<T, TState> : AbstractProcessingNode<T, T>
         where T : class, INodeOutput<T>, new()
         where TState : new()
     {

@@ -6,7 +6,7 @@ using Renci.SshNet;
 
 namespace EtlLib.Nodes.Ssh
 {
-    public class SftpFileDownloaderNode : AbstractOutputNode<NodeOutputWithFilePath>
+    public class SftpFileDownloaderNode : AbstractSourceNode<NodeOutputWithFilePath>
     {
         private readonly string _host;
         private readonly int _port;

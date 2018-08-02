@@ -4,7 +4,7 @@ using EtlLib.Pipeline;
 
 namespace EtlLib.Nodes.Impl
 {
-    public class GenericMappingNode<TIn, TOut> : AbstractInputOutputNode<TIn, TOut>
+    public class GenericMappingNode<TIn, TOut> : AbstractProcessingNode<TIn, TOut>
         where TIn : class, INodeOutput<TIn>, new()
         where TOut : class, INodeOutput<TOut>, new()
     {

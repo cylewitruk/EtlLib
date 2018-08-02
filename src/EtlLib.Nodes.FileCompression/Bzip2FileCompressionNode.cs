@@ -7,7 +7,7 @@ using ICSharpCode.SharpZipLib.BZip2;
 
 namespace EtlLib.Nodes.FileCompression
 {
-    public class BZip2FileCompressionNode : AbstractInputOutputNode<NodeOutputWithFilePath, NodeOutputWithFilePath>
+    public class BZip2FileCompressionNode : AbstractProcessingNode<NodeOutputWithFilePath, NodeOutputWithFilePath>
     {
         private int _compressionLevel, _degreeOfParallelism;
         private string _fileSuffix;
