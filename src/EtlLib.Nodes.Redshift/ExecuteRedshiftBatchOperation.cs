@@ -4,19 +4,18 @@ using System.Data;
 using EtlLib.Nodes.Redshift.Builders;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Operations;
-using Npgsql;
-
+    
 namespace EtlLib.Nodes.Redshift
 {
     public class ExecuteRedshiftBatchOperation : AbstractEtlOperationWithNoResult
     {
-        private readonly string _connectionString;
+        private readonly string _connectionName;
         private readonly List<string> _commands;
  
-        public ExecuteRedshiftBatchOperation(string name, string connectionString, Action<RedshiftCommandBatchBuilder> red)
+        public ExecuteRedshiftBatchOperation(string name, string connectionName, Action<RedshiftCommandBatchBuilder> red)
         {
             Named(name);
-            _connectionString = connectionString;
+            _connectionName = connectionName;
 
             var builder = new RedshiftCommandBatchBuilder();
             red(builder);
@@ -37,7 +36,8 @@ namespace EtlLib.Nodes.Redshift
             var log = context.GetLogger(GetType().FullName);
 
             log.Debug("Opening connection to Redshift.");
-            using (var con = new NpgsqlConnection(_connectionString))
+            
+            using (var con = context.CreateNamedDbConnection(_connectionName)) //new NpgsqlConnection(_connectionString))
             {
                 con.Open();
                 foreach (var redshiftCommand in _commands)

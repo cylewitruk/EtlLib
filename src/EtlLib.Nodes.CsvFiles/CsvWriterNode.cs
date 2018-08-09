@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using CsvHelper;
@@ -14,13 +15,18 @@ namespace EtlLib.Nodes.CsvFiles
         private bool _quoteAllFields;
         private int _writtenRowCount;
         private Encoding _encoding;
-
+        private CultureInfo _culture;
+        private string _nullAs;
+  
         public CsvWriterNode(string filePath)
         {
             _filePath = filePath;
             _includeHeader = true;
-
             _encoding = Encoding.UTF8;
+            _culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            _culture.DateTimeFormat.FullDateTimePattern = "yyyy-MM-dd HH:mm:ss.fff";
+            _culture.DateTimeFormat.ShortDatePattern = "yyyy-MM-dd";
+            _culture.DateTimeFormat.ShortTimePattern = "HH:mm:ss";
         }
 
         public CsvWriterNode IncludeHeader(bool includeHeaders = true)
@@ -34,10 +40,23 @@ namespace EtlLib.Nodes.CsvFiles
             _encoding = encoding;
             return this;
         }
-
+       
         public CsvWriterNode QuoteAllFields(bool quoteAllFields = true)
         {
             _quoteAllFields = quoteAllFields;
+            return this;
+        }
+
+
+        public CsvWriterNode WithCulture(CultureInfo cultureInfo)
+        {
+            _culture = cultureInfo;
+            return this;
+        }
+
+        public CsvWriterNode WithNullAs(string nullAs)
+        {
+            _nullAs = nullAs;
             return this;
         }
 
@@ -50,8 +69,9 @@ namespace EtlLib.Nodes.CsvFiles
             using (var file = File.OpenWrite(_filePath))
             using (var sw = new StreamWriter(file, _encoding))
             using (var writer = new CsvWriter(sw))
-            {
+            {                
                 writer.Configuration.QuoteAllFields = _quoteAllFields;
+                writer.Configuration.CultureInfo = _culture;
                 foreach (var row in Input)
                 {
                     if (first && _includeHeader)
@@ -67,7 +87,7 @@ namespace EtlLib.Nodes.CsvFiles
 
                     foreach (var column in row)
                     {
-                        writer.WriteField(column.Value);
+                        writer.WriteField(column.Value ?? _nullAs);
                     }
                     writer.NextRecord();
 

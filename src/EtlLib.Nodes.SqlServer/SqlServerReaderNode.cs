@@ -11,7 +11,7 @@ namespace EtlLib.Nodes.SqlServer
     {
         private readonly string _connectionString;
         private readonly string _commandText;
-        private readonly Dictionary<string, object> _parameters;
+        private Dictionary<string, Func<object>> _parameters;
 
         private IsolationLevel _isolationLevel;
 
@@ -19,13 +19,19 @@ namespace EtlLib.Nodes.SqlServer
         {
             _connectionString = connectionString;
             _commandText = commandText;
-            _parameters = new Dictionary<string, object>();
+            _parameters = new Dictionary<string, Func<object>>();
             _isolationLevel = IsolationLevel.ReadCommitted;
         }
 
-        public SqlServerReaderNode WithParameter(string name, object value)
+        public SqlServerReaderNode WithParameter(string name, Func<object> func)
         {
-            _parameters[name] = value;
+            _parameters[name] = func;
+            return this;
+        }
+
+        public SqlServerReaderNode WithParameters(Dictionary<string, Func<object>> parameters)
+        {
+            _parameters = parameters;
             return this;
         }
 
@@ -54,7 +60,7 @@ namespace EtlLib.Nodes.SqlServer
                         {
                             var p = cmd.CreateParameter();
                             p.ParameterName = param.Key;
-                            p.Value = param.Value;
+                            p.Value = param.Value();
 
                             cmd.Parameters.Add(p);
                         }
@@ -72,7 +78,7 @@ namespace EtlLib.Nodes.SqlServer
                                 var row = new Row();
                                 for (var i = 0; i < reader.FieldCount; i++)
                                 {
-                                    row[reader.GetName(i)] = reader[i];
+                                    row[reader.GetName(i)] = reader[i] is DBNull ? null : reader[i];
                                 }
 
                                 Emit(row);

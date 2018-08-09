@@ -26,6 +26,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         IRedshiftCopyFromAuthorizedByBuilder AuthorizedBy { get; }
         IRedshiftCopyCommandBuilder WithColumnList(params string[] columns);
         IRedshiftCopyCommandBuilder IgnoreHeaders(int numberOfRows);
+        IRedshiftCopyCommandBuilder NullAs(string nullString);
     }
 
     public interface IRedshiftCopyFromAuthorizedByBuilder
@@ -75,6 +76,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         private CopyFromAuthorizedBy _authorizedBy;
         private CopyFromSourceType _copyFromSource;
         private int _ignoreHeaderRowCount = 0;
+        private string _nullAs;
 
         public RedshiftCopyCommandBuilder()
         {
@@ -125,6 +127,12 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
             return this;
         }
 
+        public IRedshiftCopyCommandBuilder NullAs(string nullString)
+        {
+            _nullAs = nullString;
+            return this;
+        }
+
         public string Build()
         {
             var sb = new StringBuilder();
@@ -159,7 +167,8 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
 
             sb.AppendLine(BuildFormatStatement());
             sb.AppendLine(BuildDataConversionStatement());
-
+            sb.AppendLine(BuildNullAsStatement());
+            
             return sb.ToString().Trim();
         }
 
@@ -170,6 +179,16 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
             if (_ignoreHeaderRowCount > 0)
                 statement.AppendLine($"IGNOREHEADER AS {_ignoreHeaderRowCount}");
 
+            return statement.ToString();
+        }
+
+        private string BuildNullAsStatement()
+        {
+            var statement = new StringBuilder();
+            if (_nullAs != null)
+            {
+                statement.AppendLine($"NULL AS '{_nullAs}'");
+            }
             return statement.ToString();
         }
 
