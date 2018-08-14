@@ -177,7 +177,7 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
             var statement = new StringBuilder();
 
             if (_ignoreHeaderRowCount > 0)
-                statement.AppendLine($"IGNOREHEADER AS {_ignoreHeaderRowCount}");
+                statement.Append($"IGNOREHEADER AS {_ignoreHeaderRowCount}");
 
             return statement.ToString();
         }
@@ -186,9 +186,8 @@ namespace EtlLib.Nodes.Redshift.Builders.Copy
         {
             var statement = new StringBuilder();
             if (_nullAs != null)
-            {
-                statement.AppendLine($"NULL AS '{_nullAs}'");
-            }
+                statement.Append($"NULL AS '{_nullAs}'");
+            
             return statement.ToString();
         }
 

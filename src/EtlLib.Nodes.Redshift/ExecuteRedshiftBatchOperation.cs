@@ -42,7 +42,7 @@ namespace EtlLib.Nodes.Redshift
                 con.Open();
                 foreach (var redshiftCommand in _commands)
                 {
-                    log.Trace($"Executing Redshift command: {redshiftCommand}");
+                    log.Debug($"Executing Redshift command: {redshiftCommand}");
                     try
                     {
                         using (var cmd = con.CreateCommand())
