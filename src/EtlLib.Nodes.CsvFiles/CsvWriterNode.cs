@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using CsvHelper;
 using EtlLib.Data;
 using EtlLib.Pipeline;
@@ -72,6 +73,7 @@ namespace EtlLib.Nodes.CsvFiles
             {                
                 writer.Configuration.QuoteAllFields = _quoteAllFields;
                 writer.Configuration.CultureInfo = _culture;
+                var tasks = new List<Task>();
                 foreach (var row in Input)
                 {
                     if (first && _includeHeader)
@@ -89,12 +91,11 @@ namespace EtlLib.Nodes.CsvFiles
                     {
                         writer.WriteField(column.Value ?? _nullAs);
                     }
+
                     writer.NextRecord();
-
                     context.ObjectPool.Return(row);
-                    _writtenRowCount++;
+                    _writtenRowCount++;                
                 }
-
                 writer.Flush();
             }
 

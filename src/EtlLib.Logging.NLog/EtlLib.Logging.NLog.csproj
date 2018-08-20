@@ -1,5 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>EtlLib.Logging.NLog</PackageId>
@@ -12,14 +11,13 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>etl extract transform load logging nlog</PackageTags>
   </PropertyGroup>
-
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.23" PrivateAssets="all" />
     <PackageReference Include="NLog" Version="4.5.5" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\EtlLib\EtlLib.csproj" />
   </ItemGroup>
-
 </Project>

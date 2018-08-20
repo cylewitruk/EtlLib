@@ -1,5 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>EtlLib.Nodes.SqlServer</PackageId>
@@ -12,14 +11,13 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>etl extract transform load sqlserver mssql</PackageTags>
   </PropertyGroup>
-
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.23" PrivateAssets="all" />
     <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\EtlLib\EtlLib.csproj" />
   </ItemGroup>
-
 </Project>

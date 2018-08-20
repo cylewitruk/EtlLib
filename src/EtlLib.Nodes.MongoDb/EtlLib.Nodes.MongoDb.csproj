@@ -1,5 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>EtlLib.Nodes.MongoDB</PackageId>
@@ -12,14 +11,13 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>etl extract transform load mongodb mongo</PackageTags>
   </PropertyGroup>
-
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
   <ItemGroup>
     <PackageReference Include="MongoDB.Driver" Version="2.6.1" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.23" PrivateAssets="all" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\EtlLib\EtlLib.csproj" />
   </ItemGroup>
-
 </Project>

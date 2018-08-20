@@ -102,7 +102,7 @@ namespace EtlLib.Support
             if (input.Input != null)
                 throw new InvalidOperationException($"Node (Id={input.Id}, Type={input.GetType().Name}) already has an input assigned.");
 
-            if (!_queueMap.TryAdd(input, new BlockingCollection<T>(new ConcurrentQueue<T>())))
+            if (!_queueMap.TryAdd(input, new BlockingCollection<T>(new ConcurrentQueue<T>(), 10000)))
                 return false;
 
             input
