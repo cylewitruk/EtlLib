@@ -6,17 +6,17 @@ using System.Xml;
 using Amazon.Auth.AccessControlPolicy.ActionIdentifiers;
 using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.S3.Model;
+using EtlLib.Logging;
 using Amazon.S3.Transfer;
 using EtlLib.Pipeline;
 using EtlLib.Pipeline.Operations;
-using NLog;
 
 namespace EtlLib.Nodes.AmazonS3
 {
     public class AmazonS3WriterEtlOperation : AbstractEtlOperationWithEnumerableResult<AmazonS3WriterResult>, IAmazonS3WriterConfiguration
     {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger =
+            EtlLibConfig.LoggingAdapter.CreateLogger("AmazonS3WriterEtlOperation");
         
         private readonly string _bucketName;
         private AWSCredentials _awsCredentials;
@@ -110,7 +110,7 @@ namespace EtlLib.Nodes.AmazonS3
                 var bs = e.TransferredBytes / (DateTime.Now - startTime).TotalSeconds;
                 var kbs = bs / 1024;            
 
-                Logger.Info($"Transfering {e.FilePath}, progress {e.PercentDone}%, {kbs:0.00} kb/s");
+                logger.Info($"Transfering {e.FilePath}, progress {e.PercentDone}%, {kbs:0.00} kb/s");
                 progress = e.PercentDone;
             }
         }
