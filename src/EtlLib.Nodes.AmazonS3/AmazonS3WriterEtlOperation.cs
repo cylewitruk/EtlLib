@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Sockets;
-using System.Xml;
-using Amazon.Auth.AccessControlPolicy.ActionIdentifiers;
 using Amazon.Runtime;
 using Amazon.S3;
 using EtlLib.Logging;
@@ -110,7 +107,7 @@ namespace EtlLib.Nodes.AmazonS3
                 var bs = e.TransferredBytes / (DateTime.Now - startTime).TotalSeconds;
                 var kbs = bs / 1024;            
 
-                logger.Info($"Transfering {e.FilePath}, progress {e.PercentDone}%, {kbs:0.00} kb/s");
+                logger.Info($"Upploading {e.FilePath}, progress {e.PercentDone}%, {kbs:0.00} KB/s");
                 progress = e.PercentDone;
             }
         }
