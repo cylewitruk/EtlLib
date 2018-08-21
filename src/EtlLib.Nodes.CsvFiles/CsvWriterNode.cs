@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using CsvHelper;
 using EtlLib.Data;
 using EtlLib.Pipeline;
@@ -70,10 +69,9 @@ namespace EtlLib.Nodes.CsvFiles
             using (var file = File.OpenWrite(_filePath))
             using (var sw = new StreamWriter(file, _encoding))
             using (var writer = new CsvWriter(sw))
-            {                
+            {
                 writer.Configuration.QuoteAllFields = _quoteAllFields;
                 writer.Configuration.CultureInfo = _culture;
-                var tasks = new List<Task>();
                 foreach (var row in Input)
                 {
                     if (first && _includeHeader)
@@ -88,13 +86,13 @@ namespace EtlLib.Nodes.CsvFiles
                     }
 
                     foreach (var column in row)
-                    {
+                    {                        
                         writer.WriteField(column.Value ?? _nullAs);
                     }
 
                     writer.NextRecord();
                     context.ObjectPool.Return(row);
-                    _writtenRowCount++;                
+                    _writtenRowCount++;            
                 }
                 writer.Flush();
             }
