@@ -8,16 +8,16 @@ namespace EtlLib.Nodes.Impl
 {
     public class SimpleDbDataReaderNode : AbstractSourceNode<Row>
     {
-        private readonly Func<IDbConnection> _getConnection;
+        private readonly string _connectionName;
         private IsolationLevel _isolationLevel;
         private CommandType _commandType;
         private readonly string _commandText;
         private readonly Dictionary<string, object> _parameters;
 
 
-        public SimpleDbDataReaderNode(Func<IDbConnection> getDbConnectionFn, string commandText)
+        public SimpleDbDataReaderNode(string connectionName, string commandText)
         {
-            _getConnection = getDbConnectionFn;
+            _connectionName = connectionName;
             _commandText = commandText;
             _parameters = new Dictionary<string, object>();
             _isolationLevel = IsolationLevel.ReadCommitted;
@@ -44,7 +44,7 @@ namespace EtlLib.Nodes.Impl
 
         public override void OnExecute(EtlPipelineContext context)
         {
-            using (var con = _getConnection())
+            using (var con = context.CreateNamedDbConnection(_connectionName))
             {
                 if (con.State != ConnectionState.Open)
                     con.Open();
