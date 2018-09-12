@@ -10,6 +10,7 @@ using EtlLib.Nodes.Impl;
 using EtlLib.Pipeline;
 using FluentAssertions;
 using Xunit;
+using Moq;
 
 namespace EtlLib.UnitTests.NodeTests
 {
@@ -27,11 +28,20 @@ namespace EtlLib.UnitTests.NodeTests
                 con.Execute("create table TestTable(Id int, Timestamp datetime, Name varchar(50));");
                 foreach (var test in tests)
                     con.Insert(test);
+                
+                // Mock calls to CreateNamedDbConnection, to make it return the same
+                // in memmory connenction every time         
+                var mock = new Mock<EtlPipelineContext>();
+                mock.Setup(ctx => ctx.CreateNamedDbConnection("DB.Test")).Returns(con);
+                var context = mock.Object;     
 
-                var context = new EtlPipelineContext();
-
+                // register the connection name
+                context.DbConnections
+                    .For<SQLiteConnection>(reg => reg
+                        .Register("DB.Test", "foo"));
+                
                 var emitter = new TestEmitter<Row>();
-                var node = new SimpleDbDataReaderNode(() => con, "select Id, Timestamp, Name from TestTable;");
+                var node = new SimpleDbDataReaderNode("DB.Test", "select Id, Timestamp, Name from TestTable;");
                 node.SetEmitter(emitter);
                 node.Execute(context);
 
@@ -45,7 +55,7 @@ namespace EtlLib.UnitTests.NodeTests
                     results[i]["Id"].Should().Be(tests[i].Id);
                     results[i]["Timestamp"].Should().Be(tests[i].Timestamp);
                     results[i]["Name"].Should().Be(tests[i].Name);
-                }
+                }   
             }
         }
 
@@ -58,11 +68,21 @@ namespace EtlLib.UnitTests.NodeTests
             {
                 con.Open();
                 con.Execute("create table TestTable(Id int, Timestamp datetime, Name varchar(50));");
+                
+                // Mock calls to CreateNamedDbConnection, to make it return the same
+                // in memmory connenction every time        
+                var mock = new Mock<EtlPipelineContext>();
+                mock.Setup(ctx => ctx.CreateNamedDbConnection("DB.Test")).Returns(con);
+                var context = mock.Object;     
 
-                var context = new EtlPipelineContext();
+                // register the connection name
+                context.DbConnections
+                    .For<SQLiteConnection>(reg => reg
+                        .Register("DB.Test", "foo"));
+
 
                 var emitter = new TestEmitter<Row>();
-                var node = new SimpleDbDataReaderNode(() => con, "select Id, Timestamp, Name from TestTable;");
+                var node = new SimpleDbDataReaderNode("DB.Test", "select Id, Timestamp, Name from TestTable;");
                 node.SetEmitter(emitter);
                 node.Execute(context);
 

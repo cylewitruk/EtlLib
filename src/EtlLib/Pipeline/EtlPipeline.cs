@@ -53,11 +53,11 @@ namespace EtlLib.Pipeline
         }
 
         private EtlPipelineResult InternalExecute(EtlPipelineContext context)
-        {
-            PrintHeader();
+        {    
             var result = new EtlPipelineResult();
+            PrintHeader(); 
             var stopwatch = Stopwatch.StartNew();
-
+           
             if (_settings.ObjectPoolRegistrations.Count > 0)
             {
                 _log.Info("Initializing object pools...");
@@ -104,7 +104,7 @@ namespace EtlLib.Pipeline
         private IEtlOperationResult ExecuteOperation(IEtlOperation operation, EtlPipelineContext context)
         {
             _currentlyExecutingOperation = operation;
-
+            
             IEtlOperationResult result = null;
             try
             {
@@ -158,7 +158,7 @@ namespace EtlLib.Pipeline
                 }
             }
             finally
-            {
+            {                
                 if (result?.Errors.Count > 0)
                 {
                     context.ReportErrors(result.Errors);
@@ -167,7 +167,7 @@ namespace EtlLib.Pipeline
                         throw new PipelineAbortException(operation, result.Errors);
                     }
                 }
-
+               
                 if (operation is IDisposable disposable)
                 {
                     _log.Debug("Disposing of resources used by step.");
@@ -180,7 +180,7 @@ namespace EtlLib.Pipeline
 
             return result;
         }
-
+        
         private void PrintHeader()
         {
             _log.Info(new string('#', 80));
