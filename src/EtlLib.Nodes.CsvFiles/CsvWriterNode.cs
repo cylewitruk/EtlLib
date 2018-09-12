@@ -10,7 +10,8 @@ namespace EtlLib.Nodes.CsvFiles
 {
     public class CsvWriterNode : AbstractProcessingNode<Row, NodeOutputWithFilePath>
     {
-        private string _filePath;
+        private readonly string _filePath;
+
         private bool _includeHeader;
         private bool _quoteAllFields;
         private int _writtenRowCount;
@@ -72,6 +73,7 @@ namespace EtlLib.Nodes.CsvFiles
             {
                 writer.Configuration.QuoteAllFields = _quoteAllFields;
                 writer.Configuration.CultureInfo = _culture;
+
                 foreach (var row in Input)
                 {
                     if (first && _includeHeader)

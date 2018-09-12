@@ -43,6 +43,8 @@ namespace EtlLib.Nodes.SqlServer
 
         public override void OnExecute(EtlPipelineContext context)
         {
+            var logger = context.GetLogger(GetType().FullName);
+
             try
             {
                 using (var con = new SqlConnection(_connectionString))
@@ -86,12 +88,15 @@ namespace EtlLib.Nodes.SqlServer
                         }
                     }
                 }
-
-                SignalEnd();
             }
-            catch(SqlException e)
+            catch (SqlException e)
             {
-                throw new AggregateException("Error while executing query " + _commandText, e); 
+                logger.Error($"Error while executing query: \"{_commandText}\"", e);
+                throw;
+            }
+            finally
+            {
+                SignalEnd();
             }
         }
     }

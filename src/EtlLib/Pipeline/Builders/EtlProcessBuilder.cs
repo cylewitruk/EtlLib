@@ -126,8 +126,11 @@ namespace EtlLib.Pipeline.Builders
         /// <returns></returns>
         public IEtlOperationWithNoResult Build()
         {
-            var process = new EtlProcess(_ioAdapters.ToArray(), _throwOnError);
-            process.Named(Name);
+            var process = new EtlProcess(_ioAdapters.ToArray(), new EtlProcessSettings
+            {
+                ThrowOnError = _throwOnError,
+                Name = Name
+            });
 
             return process;
         }
@@ -135,8 +138,11 @@ namespace EtlLib.Pipeline.Builders
         public IEtlOperationWithEnumerableResult<TOut> Build<TOut>() 
             where TOut : class, INodeOutput<TOut>, new()
         {
-            var process = new EtlProcess<TOut>(_ioAdapters.ToArray(), _throwOnError);
-            process.Named(Name);
+            var process = new EtlProcess<TOut>(_ioAdapters.ToArray(), new EtlProcessSettings
+            {
+                ThrowOnError = _throwOnError,
+                Name = Name
+            });
 
             return process;
         }

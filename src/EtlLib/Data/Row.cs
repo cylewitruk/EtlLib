@@ -55,9 +55,12 @@ namespace EtlLib.Data
         {
             foreach (var column in row)
             {
-                if (HasColumn(column.Key) && !overwriteExisting) {
+                if (HasColumn(column.Key) && !overwriteExisting)
+                {
                     this[column.Key + "_2"] = column.Value;
-                } else {
+                }
+                else
+                {
                     this[column.Key] = column.Value;
                 }
             }

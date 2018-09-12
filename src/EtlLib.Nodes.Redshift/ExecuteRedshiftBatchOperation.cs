@@ -37,12 +37,12 @@ namespace EtlLib.Nodes.Redshift
 
             log.Debug("Opening connection to Redshift.");
             
-            using (var con = context.CreateNamedDbConnection(_connectionName)) //new NpgsqlConnection(_connectionString))
+            using (var con = context.CreateNamedDbConnection(_connectionName))
             {
                 con.Open();
                 foreach (var redshiftCommand in _commands)
                 {
-                    log.Debug($"Executing Redshift command: {redshiftCommand}");
+                    log.Trace($"Executing Redshift command: {redshiftCommand}");
                     try
                     {
                         using (var cmd = con.CreateCommand())
@@ -54,7 +54,7 @@ namespace EtlLib.Nodes.Redshift
                     }
                     catch (Exception e)
                     {
-                        log.Error(e.Message);
+                        log.Error(e.Message, e);
                         return new EtlOperationResult(false)
                             .WithError(this, e, redshiftCommand);
                     }

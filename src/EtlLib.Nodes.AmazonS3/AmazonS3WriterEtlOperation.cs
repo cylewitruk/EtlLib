@@ -12,9 +12,6 @@ namespace EtlLib.Nodes.AmazonS3
 {
     public class AmazonS3WriterEtlOperation : AbstractEtlOperationWithEnumerableResult<AmazonS3WriterResult>, IAmazonS3WriterConfiguration
     {
-        private static readonly ILogger logger =
-            EtlLibConfig.LoggingAdapter.CreateLogger("AmazonS3WriterEtlOperation");
-        
         private readonly string _bucketName;
         private AWSCredentials _awsCredentials;
         private readonly Amazon.RegionEndpoint _awsRegionEndpoint;
@@ -70,6 +67,8 @@ namespace EtlLib.Nodes.AmazonS3
 
         public override IEnumerableEtlOperationResult<AmazonS3WriterResult> ExecuteWithResult(EtlPipelineContext context)
         {
+            var logger = context.GetLogger(GetType().FullName);
+
             if ((_awsCredentials == null || _awsCredentials is AnonymousAWSCredentials) && context.Config.ContainsKey(Constants.S3AccessKeyId))
                 _awsCredentials = new BasicAWSCredentials(context.Config[Constants.S3AccessKeyId], context.Config[Constants.S3SecretAccessKey]);
 
@@ -87,30 +86,30 @@ namespace EtlLib.Nodes.AmazonS3
                         FilePath = file,
                         StorageClass = _storageClass
                     };
+
                     startTime = DateTime.Now;
                     progress = 0;
-                    request.UploadProgressEvent +=
-                        uploadRequest_UploadPartProgressEvent;
 
-                    client.UploadAsync(request).Wait();
-                    //results.Add(new AmazonS3WriterResult(objectKey, result));     
+                    request.UploadProgressEvent += (sender, e) =>
+                    {
+                        if (progress == e.PercentDone || !((DateTime.Now - startTime).TotalSeconds > 0))
+                            return;
+
+                        var bs = e.TransferredBytes / (DateTime.Now - startTime).TotalSeconds;
+                        var kbs = bs / 1024;
+
+                        logger.Info($"Upploading {e.FilePath}, progress {e.PercentDone}%, {kbs:0.00} KB/s");
+                        progress = e.PercentDone;
+                    };
+
+                    client.UploadAsync(request).GetAwaiter().OnCompleted(() =>
+                    {
+                        results.Add(new AmazonS3WriterResult(objectKey, null));
+                    });
                 }
             }
 
             return new EnumerableEtlOperationResult<AmazonS3WriterResult>(true, results);
         }
-        
-        void uploadRequest_UploadPartProgressEvent(object sender, UploadProgressArgs e)
-        {
-            if (progress != e.PercentDone && (DateTime.Now - startTime).TotalSeconds > 0)
-            {
-                var bs = e.TransferredBytes / (DateTime.Now - startTime).TotalSeconds;
-                var kbs = bs / 1024;            
-
-                logger.Info($"Upploading {e.FilePath}, progress {e.PercentDone}%, {kbs:0.00} KB/s");
-                progress = e.PercentDone;
-            }
-        }
-        
     }
 }

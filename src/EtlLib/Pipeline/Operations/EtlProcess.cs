@@ -16,7 +16,7 @@ namespace EtlLib.Pipeline.Operations
     internal class EtlProcess<TOut> : EtlProcess, IEtlOperationWithEnumerableResult<TOut>
         where TOut : class, INodeOutput<TOut>, new()
     {
-        protected internal EtlProcess(IInputOutputAdapter[] ioAdapters, bool throwOnError) : base(ioAdapters, throwOnError)
+        protected internal EtlProcess(IInputOutputAdapter[] ioAdapters, EtlProcessSettings settings) : base(ioAdapters, settings)
         {
         }
 
@@ -46,17 +46,22 @@ namespace EtlLib.Pipeline.Operations
         private readonly NodeStatistics _nodeStatistics;
         private readonly IErrorHandler _errorHandler;
         private readonly ConcurrentBag<EtlOperationError> _errors;
+        private readonly EtlProcessSettings _settings;
 
         protected ISinkNode ResultCollector { get; }
         protected bool HasResult { get; }
 
-        protected internal EtlProcess(IInputOutputAdapter[] ioAdapters, bool throwOnError)
+        protected internal EtlProcess(IInputOutputAdapter[] ioAdapters, EtlProcessSettings settings)
         {
             _log = EtlLibConfig.LoggingAdapter.CreateLogger("EtlLib.EtlProcess");
             _ioAdapters = new List<IInputOutputAdapter>(ioAdapters);
             _nodes = new List<INode>(ioAdapters.Select(x => x.SourceNode).Concat(ioAdapters.SelectMany(x => x.SinkNodes)).Distinct());
             _nodeStatistics = new NodeStatistics();
             _errors = new ConcurrentBag<EtlOperationError>();
+            _settings = settings;
+
+            Named(settings.Name);
+
             _errorHandler = new ErrorHandler()
             {
                 OnItemErrorFn = (n, e, i) =>
@@ -65,7 +70,7 @@ namespace EtlLib.Pipeline.Operations
                     _nodeStatistics.IncrementErrors(n);
                     _errors.Add(new EtlOperationError(this, n, e, i));
 
-                    if (throwOnError)
+                    if (_settings.ThrowOnError)
                     {
                         throw e;
                     }
@@ -80,7 +85,7 @@ namespace EtlLib.Pipeline.Operations
                     _nodeStatistics.IncrementErrors(n);
                     _errors.Add(new EtlOperationError(this, n, e));
                     
-                    if (throwOnError)
+                    if (_settings.ThrowOnError)
                     {
                         throw e;
                     }   

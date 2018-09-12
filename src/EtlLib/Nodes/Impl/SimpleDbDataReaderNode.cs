@@ -44,44 +44,56 @@ namespace EtlLib.Nodes.Impl
 
         public override void OnExecute(EtlPipelineContext context)
         {
-            using (var con = context.CreateNamedDbConnection(_connectionName))
+            var logger = context.GetLogger(GetType().FullName);
+
+            try
             {
-                if (con.State != ConnectionState.Open)
-                    con.Open();
-
-                using (var trx = con.BeginTransaction(_isolationLevel))
-                using (var cmd = con.CreateCommand())
+                using (var con = context.CreateNamedDbConnection(_connectionName))
                 {
-                    cmd.CommandText = _commandText;
-                    cmd.CommandType = _commandType;
-                    cmd.Transaction = trx;
+                    if (con.State != ConnectionState.Open)
+                        con.Open();
 
-                    foreach (var param in _parameters)
+                    using (var trx = con.BeginTransaction(_isolationLevel))
+                    using (var cmd = con.CreateCommand())
                     {
-                        var p = cmd.CreateParameter();
-                        p.ParameterName = param.Key;
-                        p.Value = param.Value;
+                        cmd.CommandText = _commandText;
+                        cmd.CommandType = _commandType;
+                        cmd.Transaction = trx;
 
-                        cmd.Parameters.Add(p);
-                    }
-
-                    using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
-                    {
-                        while (reader.Read())
+                        foreach (var param in _parameters)
                         {
-                            var row = new Row();
-                            for (var i = 0; i < reader.FieldCount; i++)
-                            {
-                                row[reader.GetName(i)] = reader[i];
-                            }
+                            var p = cmd.CreateParameter();
+                            p.ParameterName = param.Key;
+                            p.Value = param.Value;
 
-                            Emit(row);
+                            cmd.Parameters.Add(p);
+                        }
+
+                        using (var reader = cmd.ExecuteReader(CommandBehavior.CloseConnection))
+                        {
+                            while (reader.Read())
+                            {
+                                var row = new Row();
+                                for (var i = 0; i < reader.FieldCount; i++)
+                                {
+                                    row[reader.GetName(i)] = reader[i];
+                                }
+
+                                Emit(row);
+                            }
                         }
                     }
                 }
             }
-
-            SignalEnd();
+            catch (Exception e)
+            {
+                logger.Error($"Error while executing query: \"{_commandText}\"", e);
+                throw;
+            }
+            finally
+            {
+                SignalEnd();
+            }
         }
     }
 }
