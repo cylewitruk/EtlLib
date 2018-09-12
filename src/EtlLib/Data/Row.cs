@@ -102,6 +102,15 @@ namespace EtlLib.Data
         {
             return GetEnumerator();
         }
+
+
+        public void Remove(string key)
+        {
+            if (IsFrozen)
+                throw new InvalidOperationException("Cannot modify Row because the Row has been frozen.");
+
+            _columns.Remove(key);
+        }
     }
 
     //TODO: Implement retry logic?  Thinking mostly in the case where web requests are involved which can fail

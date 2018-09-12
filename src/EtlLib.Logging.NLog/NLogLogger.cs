@@ -1,4 +1,6 @@
-﻿namespace EtlLib.Logging.NLog
+﻿using System;
+
+namespace EtlLib.Logging.NLog
 {
     public class NLogLogger : ILogger
     {
@@ -32,6 +34,11 @@
         public void Error(string s)
         {
             _logger.Error(s);
+        }
+
+        public void Error(string s, Exception e)
+        {
+            _logger.Error(e, s);
         }
     }
 }

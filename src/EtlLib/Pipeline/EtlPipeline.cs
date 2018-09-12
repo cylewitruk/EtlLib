@@ -350,5 +350,6 @@ namespace EtlLib.Pipeline
             pipeline(p);
             return new DoWhileEtlOperationContext(this, p);
         }
+        
     }
 }
