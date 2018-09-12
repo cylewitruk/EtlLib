@@ -14,6 +14,8 @@ namespace EtlLib.Pipeline.Builders
         string Name { get; }
 
         IEtlProcessBuilder Named(string name);
+        IEtlProcessBuilder ThrowOnError(bool throwOnError);
+        
 
         IOutputNodeBuilderContext<TOut> Input<TOut>(Func<EtlPipelineContext, ISourceNode<TOut>> ctx)
             where TOut : class, INodeOutput<TOut>, new();
@@ -29,6 +31,7 @@ namespace EtlLib.Pipeline.Builders
         internal ILogger Log { get; }
         internal EtlPipelineContext Context { get; }
         public string Name { get; private set; }
+        private bool _throwOnError = false;
 
         private IInputOutputAdapter _last;
         private readonly List<IInputOutputAdapter> _ioAdapters;
@@ -106,6 +109,12 @@ namespace EtlLib.Pipeline.Builders
             Log.Debug($"'{Name}' registered new input {node}");
         }
 
+        public IEtlProcessBuilder ThrowOnError(bool throwOnError)
+        {
+            _throwOnError = throwOnError;
+            return this;
+        }
+
         public void ClearLastOutputAdapter()
         {
             _last = null;
@@ -117,8 +126,11 @@ namespace EtlLib.Pipeline.Builders
         /// <returns></returns>
         public IEtlOperationWithNoResult Build()
         {
-            var process = new EtlProcess(_ioAdapters.ToArray());
-            process.Named(Name);
+            var process = new EtlProcess(_ioAdapters.ToArray(), new EtlProcessSettings
+            {
+                ThrowOnError = _throwOnError,
+                Name = Name
+            });
 
             return process;
         }
@@ -126,8 +138,11 @@ namespace EtlLib.Pipeline.Builders
         public IEtlOperationWithEnumerableResult<TOut> Build<TOut>() 
             where TOut : class, INodeOutput<TOut>, new()
         {
-            var process = new EtlProcess<TOut>(_ioAdapters.ToArray());
-            process.Named(Name);
+            var process = new EtlProcess<TOut>(_ioAdapters.ToArray(), new EtlProcessSettings
+            {
+                ThrowOnError = _throwOnError,
+                Name = Name
+            });
 
             return process;
         }

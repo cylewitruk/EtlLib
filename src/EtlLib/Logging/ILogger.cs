@@ -1,4 +1,6 @@
-﻿namespace EtlLib.Logging
+﻿using System;
+
+namespace EtlLib.Logging
 {
     public interface ILogger
     {
@@ -7,5 +9,6 @@
         void Info(string s);
         void Warn(string s);
         void Error(string s);
+        void Error(string s, Exception e);
     }
 }

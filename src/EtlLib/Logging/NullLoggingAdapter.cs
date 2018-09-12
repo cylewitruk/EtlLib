@@ -1,4 +1,6 @@
-﻿namespace EtlLib.Logging
+﻿using System;
+
+namespace EtlLib.Logging
 {
     public class NullLoggerAdapter : ILoggingAdapter
     {
@@ -41,6 +43,10 @@
         }
 
         public void Error(string s)
+        {
+        }
+
+        public void Error(string s, Exception e)
         {
         }
     }

@@ -1,4 +1,5 @@
-﻿using EtlLib.Logging;
+﻿using System;
+using EtlLib.Logging;
 using Xunit.Abstractions;
 
 namespace EtlLib.UnitTests
@@ -34,5 +35,9 @@ namespace EtlLib.UnitTests
         public void Info(string s) => WriteLine(s);
         public void Warn(string s) => WriteLine(s);
         public void Error(string s) => WriteLine(s);
+        public void Error(string s, Exception e)
+        {
+            WriteLine(s + ": " + e.Message + "\n" + e.StackTrace);
+        }
     }
 }

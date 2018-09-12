@@ -8,6 +8,7 @@ namespace EtlLib
 {
     public static class EtlProcessBuilderExtensions
     {
+        
         public static IOutputNodeBuilderContext<T> Transform<T>(this IOutputNodeBuilderContext<T> builder, Func<EtlPipelineContext, T, T> transform)
             where T : class, INodeOutput<T>, new()
         {

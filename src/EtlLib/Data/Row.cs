@@ -56,9 +56,13 @@ namespace EtlLib.Data
             foreach (var column in row)
             {
                 if (HasColumn(column.Key) && !overwriteExisting)
-                    continue;
-
-                this[column.Key] = column.Value;
+                {
+                    this[column.Key + "_2"] = column.Value;
+                }
+                else
+                {
+                    this[column.Key] = column.Value;
+                }
             }
         }
 
@@ -101,6 +105,15 @@ namespace EtlLib.Data
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+
+        public void Remove(string key)
+        {
+            if (IsFrozen)
+                throw new InvalidOperationException("Cannot modify Row because the Row has been frozen.");
+
+            _columns.Remove(key);
         }
     }
 

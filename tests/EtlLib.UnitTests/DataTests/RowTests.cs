@@ -15,10 +15,11 @@ namespace EtlLib.UnitTests.DataTests
 
             row1.Merge(row2);
 
-            row1.Count().Should().Be(3);
-            row1.ColumnCount.Should().Be(3);
+            row1.Count().Should().Be(4);
+            row1.ColumnCount.Should().Be(4);
             row1["1"].Should().Be(2);
             row1["2"].Should().Be(3);
+            row1["2_2"].Should().Be("x");
             row1["3"].Should().Be(4);
         }
 

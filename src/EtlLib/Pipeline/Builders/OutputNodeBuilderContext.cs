@@ -18,6 +18,7 @@ namespace EtlLib.Pipeline.Builders
             where TOut : class, INodeOutput<TOut>, new();
 
         IEtlProcessCompletedWithResultBuilderContext<TIn> CompleteWithResult();
+        
     }
 
     public class OutputNodeBuilderContext<TIn> : IOutputNodeBuilderContext<TIn>

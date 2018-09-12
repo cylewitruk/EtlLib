@@ -34,7 +34,7 @@ namespace EtlLib.Pipeline
             return EtlLibConfig.LoggingAdapter.CreateLogger(name);
         }
 
-        public IDbConnection CreateNamedDbConnection(string name)
+        public virtual IDbConnection CreateNamedDbConnection(string name)
         {
             return _dbConnectionFactory.CreateNamedConnection(name);
         }
