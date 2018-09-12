@@ -11,19 +11,13 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>etl extract transform load amazon s3</PackageTags>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.3.23.1" />
-	<PackageReference Include="AWSSDK.Core" Version="3.3.25.2" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.23.1" /
+    <PackageReference Include="AWSSDK.Core" Version="3.3.25.2" />
+    <PackageReference Include="NLog" Version="4.5.8" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.23" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EtlLib\EtlLib.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c">
-      <HintPath>..\..\..\..\..\..\..\..\.nuget\packages\nlog\4.5.5\lib\netstandard2.0\NLog.dll</HintPath>
-    </Reference>
   </ItemGroup>
 </Project>
