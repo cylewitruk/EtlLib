@@ -95,16 +95,23 @@ namespace EtlLib.Nodes.AmazonS3
 
                     request.UploadProgressEvent += (sender, e) =>
                     {
-                        if (progress == e.PercentDone || !((DateTime.Now - startTime).TotalSeconds > 0))
+                        if (e.PercentDone == 100)
+                        {
+                            logger.Info($"Upload of '{e.FilePath}' completed.");
+                            return;
+                        }
+
+                        if (progress == e.PercentDone || e.PercentDone % 5 != 0 || !((DateTime.Now - startTime).TotalSeconds > 0))
                             return;
 
                         var bs = e.TransferredBytes / (DateTime.Now - startTime).TotalSeconds;
                         var kbs = bs / 1024;
 
-                        logger.Info($"Upploading {e.FilePath}, progress {e.PercentDone}%, {kbs:0.00} KB/s");
+                        logger.Info($"Uploading '{Path.GetFileName(e.FilePath)}'; Progress: {e.PercentDone:D3}%, {kbs:0.00} KiB/s");
                         progress = e.PercentDone;
                     };
 
+                    logger.Info($"Beginning upload of '{file}'.");
                     var task = client.UploadAsync(request);
                     task.GetAwaiter().OnCompleted(() =>
                     {
