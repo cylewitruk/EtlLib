@@ -107,7 +107,7 @@ namespace EtlLib.Nodes.AmazonS3
                         var bs = e.TransferredBytes / (DateTime.Now - startTime).TotalSeconds;
                         var kbs = bs / 1024;
 
-                        logger.Info($"Uploading '{Path.GetFileName(e.FilePath)}'; Progress: {e.PercentDone:D3}%, {kbs:0.00} KiB/s");
+                        logger.Info($"Uploading '{Path.GetFileName(e.FilePath)}'; Progress: {e.PercentDone.ToString().PadLeft(3)}%, {kbs:0.00} KiB/s");
                         progress = e.PercentDone;
                     };
 
