@@ -104,7 +104,7 @@ namespace EtlLib.Nodes.AmazonS3
 
                     client.UploadAsync(request).GetAwaiter().OnCompleted(() =>
                     {
-                        results.Add(new AmazonS3WriterResult(objectKey, null));
+                        results.Add(new AmazonS3WriterResult(objectKey));
                     });
                 }
             }

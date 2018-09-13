@@ -19,6 +19,11 @@ namespace EtlLib.Nodes.AmazonS3
             Expiration = result.Expiration?.ExpiryDate;
         }
 
+        public AmazonS3WriterResult(string objectKey)
+        {
+            ObjectKey = objectKey;
+        }
+
         public void Reset()
         {
             ObjectKey = null;
