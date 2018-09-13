@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Amazon.Runtime;
 using Amazon.S3;
 using EtlLib.Logging;
@@ -73,6 +74,8 @@ namespace EtlLib.Nodes.AmazonS3
                 _awsCredentials = new BasicAWSCredentials(context.Config[Constants.S3AccessKeyId], context.Config[Constants.S3SecretAccessKey]);
 
             var results = new List<AmazonS3WriterResult>();
+            var tasks = new List<Task>();
+
             using (var client = new TransferUtility(new AmazonS3Client(_awsCredentials, _awsRegionEndpoint)))
             {
                 foreach (var file in _files)
@@ -102,12 +105,16 @@ namespace EtlLib.Nodes.AmazonS3
                         progress = e.PercentDone;
                     };
 
-                    client.UploadAsync(request).GetAwaiter().OnCompleted(() =>
+                    var task = client.UploadAsync(request);
+                    task.GetAwaiter().OnCompleted(() =>
                     {
                         results.Add(new AmazonS3WriterResult(objectKey));
                     });
+                    tasks.Add(task);
                 }
             }
+
+            Task.WaitAll(tasks.ToArray());
 
             return new EnumerableEtlOperationResult<AmazonS3WriterResult>(true, results);
         }
