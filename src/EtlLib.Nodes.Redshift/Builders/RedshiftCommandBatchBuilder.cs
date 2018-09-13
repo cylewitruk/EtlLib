@@ -25,6 +25,22 @@ namespace EtlLib.Nodes.Redshift.Builders
             Commands.Add(cmd.Build());
         }
 
+        public void ExecuteIf(Func<bool> predicate, Action<IRedshiftCommandBuilder> cmd)
+        {
+            if (!predicate())
+                return;
+
+            Execute(cmd);
+        }
+
+        public void ExecuteIf(Func<bool> predicate, IRedshiftBuilder cmd)
+        {
+            if (!predicate())
+                return;
+
+            Execute(cmd);
+        }
+
         public void BeginTransaction()
         {
             Commands.Add("BEGIN;");
