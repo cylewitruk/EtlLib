@@ -27,7 +27,7 @@ namespace EtlLib.Nodes.CsvFiles
             _culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
             _culture.DateTimeFormat.FullDateTimePattern = "yyyy-MM-dd HH:mm:ss.fff";
             _culture.DateTimeFormat.ShortDatePattern = "yyyy-MM-dd";
-            _culture.DateTimeFormat.ShortTimePattern = "HH:mm:ss";
+            _culture.DateTimeFormat.LongTimePattern = "HH:mm:ss.fff";
         }
 
         public CsvWriterNode IncludeHeader(bool includeHeaders = true)
